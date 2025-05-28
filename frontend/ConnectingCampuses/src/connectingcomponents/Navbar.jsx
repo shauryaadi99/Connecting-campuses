@@ -5,6 +5,7 @@ import { FiUser } from "react-icons/fi";
 import LoginForm from "./Login";
 import { useAuth } from "../context/AuthContext"; // make sure this path is correct
 import { logout } from "./Login";
+import toast, { Toaster } from "react-hot-toast";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -13,9 +14,7 @@ const Navbar = () => {
   const [showLogin, setShowLogin] = useState(false);
   const modalRef = useRef(null);
 
-  const { user, setUser,logout: logoutFn, loading } = useAuth();
-
-  
+  const { user, setUser, logout: logoutFn, loading } = useAuth();
 
   console.log("AuthContext user:", user);
   console.log("AuthContext setUser:", setUser);
@@ -69,9 +68,16 @@ const Navbar = () => {
   };
 
   const handleNavClick = (e, href) => {
+    e.preventDefault();
+
+    if (href === "/attendance" && !user) {
+      toast.error("Please login to view and track your attendance.");
+      return;
+    }
+
     const isHash = href.startsWith("#");
+
     if (isHash) {
-      e.preventDefault();
       const sectionId = href.slice(1);
       if (location.pathname !== "/") {
         navigate("/", { state: { scrollTo: sectionId } });
@@ -83,6 +89,7 @@ const Navbar = () => {
     } else {
       navigate(href);
     }
+
     setIsOpen(false);
   };
 
@@ -118,7 +125,6 @@ const Navbar = () => {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [showLogin]);
-  
 
   const LoginOrProfileButton = user ? (
     <div className="relative flex items-center space-x-2">
@@ -149,6 +155,8 @@ const Navbar = () => {
 
   return (
     <>
+      <Toaster />
+
       <nav className="fixed w-full z-50 bg-white/30 backdrop-blur-lg shadow-sm transition">
         <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16">
           <div className="flex items-center justify-between h-20">

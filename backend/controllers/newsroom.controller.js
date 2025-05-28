@@ -1,71 +1,81 @@
-import NewsroomPost from "../models/newsroom.model.js";
+import NewsroomEvent from "../models/newsroom.model.js";
 
-// Create a new post
-export const createNewsroomPost = async (req, res) => {
+// Create a new newsroom event
+const createNewsroomEvent = async (req, res) => {
   try {
-    const {
-      category,
-      club,
-      title,
-      src,
-      content,
-      date,
-    } = req.body;
+    console.log("Received event data:", req.body);
+    const event = new NewsroomEvent(req.body);
+    const savedEvent = await event.save();
+    console.log("Event saved:", savedEvent);
+    res.status(201).json(savedEvent);
+  } catch (error) {
+    console.error("Error saving event:", error);
+    res.status(400).json({ error: error.message });
+  }
+};
 
-    const userId = req.user._id; // Assumes user is authenticated and available in req.user
 
-    const newPost = await NewsroomPost.create({
-      category,
-      club,
-      title,
-      src,
-      content,
-      date,
-      createdBy: userId,
+// Get all newsroom events
+const getAllNewsroomEvents = async (req, res) => {
+  try {
+    const events = await NewsroomEvent.find().sort({ date: -1 });
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get all events by email (creator)
+const getNewsroomEventsByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const events = await NewsroomEvent.find({ email }).sort({ date: -1 });
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update newsroom event
+const updateNewsroomEvent = async (req, res) => {
+  try {
+    const event = await NewsroomEvent.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
     });
-
-    res.status(201).json({ success: true, data: newPost });
+    if (!event) return res.status(404).json({ error: 'Newsroom event not found' });
+    res.status(200).json(event);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(400).json({ error: error.message });
   }
 };
 
-// Get all posts
-export const getAllNewsroomPosts = async (req, res) => {
+// Delete newsroom event
+const deleteNewsroomEvent = async (req, res) => {
   try {
-    const posts = await NewsroomPost.find().populate("createdBy", "name email");
-    res.status(200).json({ success: true, data: posts });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+    console.log('Received delete request for ID:', req.params.id);
 
-// Get a single post by ID
-export const getNewsroomPostById = async (req, res) => {
-  try {
-    const post = await NewsroomPost.findById(req.params.id).populate("createdBy", "name email");
+    const event = await NewsroomEvent.findByIdAndDelete(req.params.id);
 
-    if (!post) {
-      return res.status(404).json({ success: false, message: "Post not found" });
+    if (!event) {
+      // console.log(`No event found with ID: ${req.params.id}`);
+      return res.status(404).json({ error: 'Newsroom event not found' });
     }
 
-    res.status(200).json({ success: true, data: post });
+    console.log(`Successfully deleted event with ID: ${req.params.id}`);
+    res.status(200).json({ message: 'Newsroom event deleted successfully' });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error deleting event:', error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-// Delete a post
-export const deleteNewsroomPost = async (req, res) => {
-  try {
-    const post = await NewsroomPost.findByIdAndDelete(req.params.id);
 
-    if (!post) {
-      return res.status(404).json({ success: false, message: "Post not found" });
-    }
-
-    res.status(200).json({ success: true, message: "Post deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+export {
+  createNewsroomEvent,
+  getAllNewsroomEvents,
+  updateNewsroomEvent,
+  deleteNewsroomEvent,
+  getNewsroomEventsByEmail,
 };

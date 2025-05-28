@@ -233,7 +233,7 @@ const ProfileCard = () => {
                 <span className="italic text-gray-300">N/A</span>
               )}
             </div>
-            <div>
+            {/* <div>
               <span className="font-semibold text-white">Department:</span>{" "}
               {user.department || (
                 <span className="italic text-gray-300">N/A</span>
@@ -244,7 +244,7 @@ const ProfileCard = () => {
               {user.description || (
                 <span className="italic text-gray-300">N/A</span>
               )}
-            </div>
+            </div> */}
             <div>
               <span className="font-semibold text-white">College:</span>{" "}
               <span>Birla Institute of Technology, Mesra</span>
@@ -262,7 +262,7 @@ const ProfileCard = () => {
             Logout
           </Button>
 
-          <SocialIcons>
+          {/* <SocialIcons>
             <SocialIcon
               href="https://linkedin.com"
               target="_blank"
@@ -284,7 +284,7 @@ const ProfileCard = () => {
             >
               <FaFacebookF />
             </SocialIcon>
-          </SocialIcons>
+          </SocialIcons> */}
         </CardContainer>
       </FullscreenContainer>
     </div>

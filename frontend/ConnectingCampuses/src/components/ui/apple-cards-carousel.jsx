@@ -1,4 +1,3 @@
-"use client";;
 import React, {
   useEffect,
   useRef,
@@ -10,20 +9,23 @@ import {
   IconArrowNarrowLeft,
   IconArrowNarrowRight,
   IconX,
+  IconTrash,
 } from "@tabler/icons-react";
 import { cn } from "../../lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useOutsideClick } from "../../hooks/use-outside-click";
+import { useAuth } from "../../context/AuthContext";
+import axios from "axios";
+import { USER_API_ENDPOINT } from "../../../constants";
+import { useLocation } from "react-router-dom"; // ✅ Add this at the top
 
 export const CarouselContext = createContext({
   onCardClose: () => {},
   currentIndex: 0,
 });
 
-export const Carousel = ({
-  items,
-  initialScroll = 0
-}) => {
+export const Carousel = ({ items, initialScroll = 0 }) => {
+  const user = useAuth();
   const carouselRef = React.useRef(null);
   const [canScrollLeft, setCanScrollLeft] = React.useState(false);
   const [canScrollRight, setCanScrollRight] = React.useState(true);
@@ -56,11 +58,18 @@ export const Carousel = ({
     }
   };
 
+  const isMobile = () => {
+    // Safe check for window during SSR
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  };
+
   const handleCardClose = (index) => {
     if (carouselRef.current) {
-      const cardWidth = isMobile() ? 230 : 384; // (md:w-96)
+      const cardWidth = isMobile() ? 230 : 384; // md:w-96
       const gap = isMobile() ? 4 : 8;
-      const scrollPosition = (cardWidth + gap) * (index + 1);
+      const scrollPosition = (cardWidth + gap) * index;
+
       carouselRef.current.scrollTo({
         left: scrollPosition,
         behavior: "smooth",
@@ -69,26 +78,28 @@ export const Carousel = ({
     }
   };
 
-  const isMobile = () => {
-    return window && window.innerWidth < 768;
-  };
-
   return (
-    <CarouselContext.Provider value={{ onCardClose: handleCardClose, currentIndex }}>
+    <CarouselContext.Provider
+      value={{ onCardClose: handleCardClose, currentIndex }}
+    >
       <div className="relative w-full">
         <div
           className="flex w-full overflow-x-scroll overscroll-x-auto scroll-smooth py-10 [scrollbar-width:none] md:py-20"
           ref={carouselRef}
-          onScroll={checkScrollability}>
+          onScroll={checkScrollability}
+        >
           <div
-            className={cn("absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l")}></div>
+            className={cn(
+              "absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l"
+            )}
+          ></div>
 
           <div
             className={cn(
               "flex flex-row justify-start gap-4 pl-4",
-              // remove max-w-4xl if you want the carousel to span the full width of its container
-              "mx-auto max-w-7xl"
-            )}>
+              "mx-auto max-w-7xl" // removed comment for clarity
+            )}
+          >
             {items.map((item, index) => (
               <motion.div
                 initial={{
@@ -106,7 +117,8 @@ export const Carousel = ({
                   },
                 }}
                 key={"card" + index}
-                className="rounded-3xl last:pr-[5%] md:last:pr-[33%]">
+                className="rounded-3xl last:pr-[5%] md:last:pr-[33%]"
+              >
                 {item}
               </motion.div>
             ))}
@@ -116,13 +128,15 @@ export const Carousel = ({
           <button
             className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
             onClick={scrollLeft}
-            disabled={!canScrollLeft}>
+            disabled={!canScrollLeft}
+          >
             <IconArrowNarrowLeft className="h-6 w-6 text-gray-500" />
           </button>
           <button
             className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
             onClick={scrollRight}
-            disabled={!canScrollRight}>
+            disabled={!canScrollRight}
+          >
             <IconArrowNarrowRight className="h-6 w-6 text-gray-500" />
           </button>
         </div>
@@ -133,10 +147,16 @@ export const Carousel = ({
 
 export const Card = ({
   card,
-  onClick,
   index,
-  layout = false
+  isOpen,
+  onOpen,
+  onClose,
+  showDelete,
+  onDelete,
 }) => {
+  const { user } = useAuth(); // fixed: no destructuring here
+  const location = useLocation(); // ✅ Get current path
+  const pathname = location.pathname;
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -170,6 +190,41 @@ export const Card = ({
     onCardClose(index);
   };
 
+  // Delete button handler
+  const handleDeleteClick = async (e) => {
+    e.stopPropagation();
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this event?"
+    );
+    if (!confirmed) return;
+
+    if (!card._id) return;
+    // console.log("Deleting event with ID:", card._id);
+
+    try {
+      // Call the DELETE endpoint
+      await axios.delete(
+        `${USER_API_ENDPOINT}/api/college-events/${card._id}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      // Notify parent to remove from state
+      if (onDelete) {
+        onDelete(card._id);
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("Failed to delete the event. Please try again.");
+    }
+  };
+
+  const canDelete = user?.email && user.email === card.email;
+  const canShowTrash = canDelete && pathname === "/newsroom"; // ✅ Conditional check here  // console.log("User email:", user?.email);
+  // console.log("Card email:", card.email);
+  // console.log("Card rendered with canDelete:", canDelete);
+
   return (
     <>
       <AnimatePresence>
@@ -179,77 +234,132 @@ export const Card = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg" />
+              className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg"
+            />
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               ref={containerRef}
-              layoutId={layout ? `card-${card.title}` : undefined}
-              className="relative z-[60] mx-auto my-10 h-fit max-w-5xl rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900">
+              layoutId={card.title ? `card-${card.title}` : undefined} // fixed undefined layout
+              className="relative z-[60] mx-auto my-10 h-fit max-w-5xl rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
+            >
               <button
-                className="sticky top-4 right-0 ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
-                onClick={handleClose}>
-                <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
+                className="absolute top-4 right-4 z-[70] flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
+                onClick={handleClose}
+              >
+                <IconX className="h-6 w-6 text-white dark:text-black" />
               </button>
-              <motion.p
-                layoutId={layout ? `category-${card.title}` : undefined}
-                className="text-base font-medium text-black dark:text-white">
-                {card.category}
+
+              {/* User email */}
+              <motion.p className="text-sm font-medium text-black dark:text-white">
+                {card?.email}
               </motion.p>
+
+              {/* Title */}
               <motion.p
-                layoutId={layout ? `title-${card.title}` : undefined}
-                className="mt-4 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white">
+                layoutId={card.title ? `title-${card.title}` : undefined} // fixed undefined layout
+                className="mt-2 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
+              >
                 {card.title}
               </motion.p>
-              <div className="py-10">{card.content}</div>
+
+              {/* Club name */}
+              {card.club && (
+                <motion.p className="mt-1 text-lg font-medium text-neutral-600 dark:text-neutral-300">
+                  {card.club}
+                </motion.p>
+              )}
+
+              <div className="py-10 text-white">{card.content}</div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-      <motion.button
-        layoutId={layout ? `card-${card.title}` : undefined}
+
+      <motion.div
+        layoutId={card.title ? `card-${card.title}` : undefined}
         onClick={handleOpen}
-        className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-        <div className="relative z-40 p-8">
-          <motion.p
-            layoutId={layout ? `category-${card.category}` : undefined}
-            className="text-left font-sans text-sm font-medium text-white md:text-base">
-            {card.category}
-          </motion.p>
-          <motion.p
-            layoutId={layout ? `title-${card.title}` : undefined}
-            className="mt-2 max-w-xs text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl">
-            {card.title}
-          </motion.p>
+        className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleOpen();
+          }
+        }}
+      >
+        {/* Delete button - only show if user owns this card */}
+      {canShowTrash && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent card click
+              handleDeleteClick(e);
+            }}
+            className="absolute top-3 right-3 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-white shadow-md transition-all duration-200 hover:scale-105 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
+            title="Delete event"
+          >
+            <IconTrash className="h-5 w-5" stroke={2} />
+          </button>
+        )}
+
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
+        <div className="relative z-40 flex h-full w-full flex-col items-start justify-start p-4 md:p-8 text-left space-y-1">
+          {/* Email */}
+          {card.email && (
+            <motion.p
+              layoutId={card.email ? `email-${card.email}` : undefined} // fixed undefined layout
+              className="w-full truncate text-xs font-medium text-white md:text-sm"
+              title={card.email}
+            >
+              {card.email}
+            </motion.p>
+          )}
+
+          {/* Title */}
+          {card.title && (
+            <motion.p
+              layoutId={card.title ? `title-${card.title}` : undefined} // fixed undefined layout
+              className="w-full truncate font-sans text-base font-semibold text-white md:text-2xl"
+              title={card.title}
+            >
+              {card.title}
+            </motion.p>
+          )}
+
+          {/* Club */}
+          {card.club && (
+            <motion.p
+              layoutId={card.club ? `club-${card.club}` : undefined} // fixed undefined layout
+              className="w-full truncate text-xs font-medium text-white md:text-sm"
+              title={card.club}
+            >
+              {card.club}
+            </motion.p>
+          )}
         </div>
         <BlurImage
           src={card.src}
           alt={card.title}
-          fill="true"
-          className="absolute inset-0 z-10 object-cover" />
-      </motion.button>
+          // Removed invalid fill="true" prop from img
+          className="absolute inset-0 z-10 object-cover"
+        />
+      </motion.div>
     </>
   );
 };
 
-export const BlurImage = ({
-  height,
-  width,
-  src,
-  className,
-  alt,
-  ...rest
-}) => {
+export const BlurImage = ({ height, width, src, className, alt, ...rest }) => {
   const [isLoading, setLoading] = useState(true);
 
   return (
     <img
       className={cn(
         "h-full w-full object-cover transition duration-300",
-        isLoading ? "blur-sm grayscale scale-105" : "blur-0 grayscale-0 scale-100",
+        isLoading
+          ? "blur-sm grayscale scale-105"
+          : "blur-0 grayscale-0 scale-100",
         className
       )}
       onLoad={() => setLoading(false)}
@@ -263,4 +373,3 @@ export const BlurImage = ({
     />
   );
 };
-

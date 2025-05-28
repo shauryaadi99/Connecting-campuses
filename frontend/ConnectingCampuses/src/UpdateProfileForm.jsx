@@ -10,14 +10,15 @@ import { useAuth } from "./context/AuthContext";
 
 const UpdateProfileForm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.error("No token found, redirecting to login.");
+  console.log("User object from useAuth:", user);
+
+  if (!user) {
+    console.error("User not authenticated, redirecting to login.");
     navigate("/");
-    return null; // return null to avoid rendering
+    return null;
   }
-  const user = JSON.parse(localStorage.getItem("user"));
 
   // Initialize form data as empty but placeholders come from user
   const [formData, setFormData] = useState({
@@ -46,8 +47,14 @@ const UpdateProfileForm = () => {
 
     // Prepare data to send, fallback to stored user data if input is empty
     const dataToSend = {
-      name: formData.name.trim() === "" ? user.name || user.fullname || "" : formData.name,
-      phone: formData.phone.trim() === "" ? user.phone || user.phoneNumber || "" : formData.phone,
+      name:
+        formData.name.trim() === ""
+          ? user.name || user.fullname || ""
+          : formData.name,
+      phone:
+        formData.phone.trim() === ""
+          ? user.phone || user.phoneNumber || ""
+          : formData.phone,
       graduatingYear:
         formData.graduatingYear.trim() === ""
           ? user.graduatingYear?.toString() || ""
@@ -61,7 +68,6 @@ const UpdateProfileForm = () => {
         `${USER_API_ENDPOINT}/api/user/update-profile`,
         dataToSend,
         {
-          headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
         }
       );
@@ -174,6 +180,26 @@ const UpdateProfileForm = () => {
                        transition duration-300 ease-in-out"
             />
           </LabelInputContainer>
+          <LabelInputContainer>
+            <label
+              htmlFor="email"
+              className="text-base font-semibold text-gray-700 dark:text-gray-300 cursor-not-allowed"
+            >
+              Email:
+            </label>
+            <input
+              id="email"
+              type="email"
+              name="email"
+              value={user.email}
+              placeholder={user.email || "e.g., john.doe@example.com"}
+              readOnly
+              className="rounded-lg border border-gray-300 px-4 py-3 text-lg text-gray-900 placeholder-gray-400 shadow-sm
+             focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+             dark:bg-zinc-800 dark:border-zinc-700 dark:text-white dark:placeholder-gray-500
+             transition duration-300 ease-in-out cursor-not-allowed disabled:cursor-not-allowed"
+            />
+          </LabelInputContainer>
 
           <button
             type="submit"
@@ -210,7 +236,9 @@ const BottomGradient = () => (
 );
 
 const LabelInputContainer = ({ children, className }) => (
-  <div className={cn("flex w-full flex-col space-y-1", className)}>{children}</div>
+  <div className={cn("flex w-full flex-col space-y-1", className)}>
+    {children}
+  </div>
 );
 
 export default UpdateProfileForm;

@@ -2,212 +2,95 @@ import React, { useState, useEffect } from "react";
 import { Carousel, Card } from "./components/ui/apple-cards-carousel";
 import { Label } from "./components/ui/label";
 import { Input } from "./components/ui/input";
+import axios from "axios";
+import { USER_API_ENDPOINT } from "../constants";
+
 import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 
-const DummyContent = () => {
-  return (
-    <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-8 md:p-14 rounded-3xl mb-4">
-      <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans max-w-3xl mx-auto">
-        <span className="font-bold text-neutral-700 dark:text-neutral-200">
-          The first rule of Apple club is that you boast about Apple club.
-        </span>{" "}
-        Keep a journal, quickly jot down a grocery list, and take amazing class
-        notes. Want to convert those notes to text? No problem. Langotiya jeetu
-        ka mara hua yaar is ready to capture every thought.
-      </p>
-      <img
-        src="https://assets.aceternity.com/macbook.png"
-        alt="Macbook mockup from Aceternity UI"
-        height="500"
-        width="500"
-        className="md:w-1/2 md:h-1/2 h-full w-full mx-auto object-contain"
-      />
-    </div>
-  );
-};
-
-// (your existing data array here...)
-const data = [
-  {
-    category: "Workshop",
-    club: "Entrepreneurship Club",
-    title: "Startup Basics: How to Pitch Your Idea",
-    src: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d",
-    content: <DummyContent />,
-    date: "2025-06-10",
-  },
-  {
-    category: "Seminar",
-    club: "Literary Society (LitSoc)",
-    title: "Exploring Modern Poetry",
-    src: "https://images.unsplash.com/photo-1515377905703-c4788e51af15",
-    content: <DummyContent />,
-    date: "2025-05-25",
-  },
-  {
-    category: "Publication",
-    club: "News and Publication Society (NAPS)",
-    title: "Campus Weekly Newsletter Release",
-    src: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f",
-    content: <DummyContent />,
-    date: "2025-05-22",
-  },
-  {
-    category: "Exhibition",
-    club: "Photographic Society (PSOC)",
-    title: "Photo Exhibition: Nature's Beauty",
-    src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-    content: <DummyContent />,
-    date: "2025-06-05",
-  },
-  {
-    category: "Social Service",
-    club: "NSS",
-    title: "Cleanliness Drive on Campus",
-    src: "https://images.unsplash.com/photo-1500534623283-312aade485b7",
-    content: <DummyContent />,
-    date: "2025-05-30",
-  },
-  {
-    category: "Tournament",
-    club: "Sports Club",
-    title: "Inter-College Football Championship",
-    src: "https://images.unsplash.com/photo-1517649763962-0c623066013b",
-    content: <DummyContent />,
-    date: "2025-06-15",
-  },
-  {
-    category: "Workshop",
-    club: "Finance Club",
-    title: "Investment Basics: Stock Market 101",
-    src: "https://images.unsplash.com/photo-1556741533-f6acd647d2fb",
-    content: <DummyContent />,
-    date: "2025-06-01",
-  },
-  {
-    category: "Performance",
-    club: "Dance Club",
-    title: "Annual Dance Fest",
-    src: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91",
-    content: <DummyContent />,
-    date: "2025-06-20",
-  },
-  {
-    category: "Play",
-    club: "Ehsaas Dramatics Society",
-    title: "Drama Night: 'The Unexpected Journey'",
-    src: "https://images.unsplash.com/photo-1468071174046-657d9d351a40",
-    content: <DummyContent />,
-    date: "2025-06-12",
-  },
-  {
-    category: "Art Exhibition",
-    club: "Fine Arts Society (FAS)",
-    title: "Student Art Showcase",
-    src: "https://images.unsplash.com/photo-1494526585095-c41746248156",
-    content: <DummyContent />,
-    date: "2025-05-28",
-  },
-  {
-    category: "Community Service",
-    club: "Leo Club",
-    title: "Blood Donation Camp",
-    src: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91",
-    content: <DummyContent />,
-    date: "2025-06-03",
-  },
-  {
-    category: "Concert",
-    club: "Music Club",
-    title: "Spring Music Festival",
-    src: "https://images.unsplash.com/photo-1511376777868-611b54f68947",
-    content: <DummyContent />,
-    date: "2025-06-08",
-  },
-  {
-    category: "Tech Talk",
-    club: "Developer Student Clubs (GDSC)",
-    title: "Introduction to Machine Learning",
-    src: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
-    content: <DummyContent />,
-    date: "2025-06-18",
-  },
-  {
-    category: "Workshop",
-    club: "IET BIT Mesra",
-    title: "Robotics Basics",
-    src: "https://images.unsplash.com/photo-1537432376769-00e6e2de27bc",
-    content: <DummyContent />,
-    date: "2025-06-22",
-  },
-  {
-    category: "Meet & Greet",
-    club: "Society of Alumni Relationship Club (SARC)",
-    title: "Alumni Networking Evening",
-    src: "https://images.unsplash.com/photo-1497493292307-31c376b6e479",
-    content: <DummyContent />,
-    date: "2025-06-25",
-  },
-  {
-    category: "Cultural Fest",
-    club: "Literary Society (LitSoc)",
-    title: "Storytelling and Open Mic Night",
-    src: "https://images.unsplash.com/photo-1472201750091-888d0f18e3b7",
-    content: <DummyContent />,
-    date: "2025-06-07",
-  },
-  {
-    category: "Photography Contest",
-    club: "Photographic Society (PSOC)",
-    title: "Campus Life Through Lens",
-    src: "https://images.unsplash.com/photo-1497215842964-222b430dc094",
-    content: <DummyContent />,
-    date: "2025-06-14",
-  },
-];
+const DummyContent = ({ description }) => (
+  <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-8 md:p-14 rounded-3xl mb-4">
+    <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans max-w-3xl mx-auto">
+      <span className="font-bold text-neutral-700 dark:text-neutral-200">
+        {description}
+      </span>{" "}
+    </p>
+    <img
+      src="https://assets.aceternity.com/macbook.png"
+      alt="Macbook mockup"
+      height="500"
+      width="500"
+      className="md:w-1/2 md:h-1/2 h-full w-full mx-auto object-contain"
+    />
+  </div>
+);
 
 const categories = ["All", "Workshop", "Cultural", "Technical", "Podcast"];
-const clubs = ["All", ...new Set(data.map((item) => item.club))];
 const sortOrders = ["Newest First", "Oldest First"];
 
 const NewsroomListing = () => {
-  const [events, setEvents] = useState(data); // use state for dynamic adding
+  const [events, setEvents] = useState([]);
   const [openCardIndex, setOpenCardIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedClub, setSelectedClub] = useState("All");
   const [sortOrder, setSortOrder] = useState("Newest First");
   const [search, setSearch] = useState("");
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false
+  );
   const { user } = useAuth();
-
   const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [newEvent, setNewEvent] = useState({
     category: "",
     club: "",
     title: "",
     src: "",
     date: "",
-    email: user?.email || "", // ✅ Safely set user email
+    email: user?.email || "",
     description: "",
   });
-
-  useEffect(() => {
-    const enableScroll = () => {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-    };
-
-    enableScroll();
-
-    return () => enableScroll();
-  }, [openCardIndex]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Update email if user changes (important)
+  useEffect(() => {
+    setNewEvent((prev) => ({
+      ...prev,
+      email: user?.email || "",
+    }));
+  }, [user]);
+
+  // Fetch events
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await axios.get(
+          `${USER_API_ENDPOINT}/api/college-events/`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        const mappedEvents = res.data.map((event) => ({
+          ...event,
+          content: <DummyContent description={event.description} />,
+        }));
+
+        setEvents(mappedEvents);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const clubs = ["All", ...new Set(events.map((item) => item.club))];
 
   const resetFilters = () => {
     setSelectedCategory("All");
@@ -226,25 +109,11 @@ const NewsroomListing = () => {
       );
     })
     .sort((a, b) => {
-      if (sortOrder === "Newest First") {
-        return new Date(b.date) - new Date(a.date);
-      } else {
-        return new Date(a.date) - new Date(b.date);
-      }
+      return sortOrder === "Newest First"
+        ? new Date(b.date) - new Date(a.date)
+        : new Date(a.date) - new Date(b.date);
     });
 
-  const cardsForCarousel = filteredCards.map((card, index) => (
-    <Card
-      key={card.src || index}
-      card={card}
-      index={index}
-      isOpen={openCardIndex === index}
-      onOpen={() => setOpenCardIndex(index)}
-      onClose={() => setOpenCardIndex(null)}
-    />
-  ));
-
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewEvent((prev) => ({ ...prev, [name]: value }));
@@ -258,11 +127,9 @@ const NewsroomListing = () => {
     setIsModalOpen(true);
   };
 
-  // Handle form submission
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
     if (
       !newEvent.category ||
       !newEvent.club ||
@@ -273,32 +140,55 @@ const NewsroomListing = () => {
       return;
     }
 
-    // Add new event to list
-    setEvents((prev) => [
-      ...prev,
-      {
-        ...newEvent,
-        // Provide dummy content or empty React node for content prop
-        content: <DummyContent />,
-      },
-    ]);
+    try {
+      const response = await axios.post(
+        `${USER_API_ENDPOINT}/api/college-events/`,
+        newEvent,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-    // Close modal & reset form
-    setIsModalOpen(false);
-    setNewEvent({
-      category: "",
-      club: "",
-      title: "",
-      src: "",
-      date: "",
-      email: user?.email || "",
-      description: "",
-    });
+      const savedEvent = {
+        ...response.data,
+        content: <DummyContent description={response.data.description} />,
+      };
+
+      setEvents((prev) => [...prev, savedEvent]);
+
+      setIsModalOpen(false);
+      setNewEvent({
+        category: "",
+        club: "",
+        title: "",
+        src: "",
+        date: "",
+        email: user?.email || "",
+        description: "",
+      });
+    } catch (error) {
+      alert(
+        error.response?.data?.message || error.message || "Failed to add event"
+      );
+    }
+  };
+
+  // Optional: Implement event delete handler or remove from props below
+  const handleDeleteEvent = async (id) => {
+    try {
+      await axios.delete(`${USER_API_ENDPOINT}/api/college-events/${id}`, {
+        withCredentials: true,
+      });
+      setEvents((prev) => prev.filter((event) => event._id !== id));
+    } catch (error) {
+      alert("Failed to delete event");
+    }
   };
 
   return (
     <div className="pt-24 h-full py-10 bg-gray-50 dark:bg-gray-900 w-full relative">
-      <h2 className="text-4xl font-extrabold text-center text-neutral-900 dark:text-white mb-4">
+      <h2 className="text-2xl md:text-4xl font-extrabold text-center text-neutral-900 dark:text-white mb-4">
         College Newsroom 📰
       </h2>
 
@@ -370,12 +260,25 @@ const NewsroomListing = () => {
               No events found.
             </div>
           ) : isMobile ? (
-            <Carousel items={cardsForCarousel} />
+            <Carousel
+              items={filteredCards.map((card, index) => (
+                <Card
+                  key={card._id || index}
+                  card={card}
+                  index={index}
+                  isOpen={openCardIndex === index}
+                  onOpen={() => setOpenCardIndex(index)}
+                  onClose={() => setOpenCardIndex(null)}
+                  showDelete={card.email === user?.email}
+                  onDelete={() => handleDeleteEvent(card._id)}
+                />
+              ))}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredCards.map((card, index) => (
                 <div
-                  key={index}
+                  key={card._id || index}
                   className={`transform scale-95 hover:scale-100 transition-transform duration-300 relative ${
                     openCardIndex === index ? "z-50" : "z-10"
                   } mb-8`}
@@ -386,6 +289,8 @@ const NewsroomListing = () => {
                     isOpen={openCardIndex === index}
                     onOpen={() => setOpenCardIndex(index)}
                     onClose={() => setOpenCardIndex(null)}
+                    showDelete={card.email === user?.email}
+                    onDelete={() => handleDeleteEvent(card._id)}
                   />
                 </div>
               ))}
@@ -397,32 +302,10 @@ const NewsroomListing = () => {
       {/* Floating Add Button */}
       <button
         onClick={handleOpenModal}
-        className="
-    fixed 
-    bottom-8 
-    right-8 
-    bg-gradient-to-br from-blue-500 to-indigo-600
-    text-white 
-    rounded-full 
-    p-5 
-    shadow-2xl 
-    hover:from-indigo-600 
-    hover:to-blue-700 
-    focus:outline-none 
-    focus:ring-4 
-    focus:ring-indigo-400 
-    focus:ring-opacity-50
-    active:scale-95
-    cursor-pointer
-    transition 
-    duration-300 
-    ease-in-out
-    z-30
-  "
-        aria-label="Add new event"
+        className="fixed bottom-8 right-8 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full p-5 shadow-2xl hover:from-indigo-600 hover:to-blue-700 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:ring-opacity-50 active:scale-95 cursor-pointer transition duration-300 ease-in-out z-30"
         title="Add New Event"
         style={{
-          boxShadow: "0 8px 15px rgba(59, 130, 246, 0.5)", // subtle blue shadow
+          boxShadow: "0 8px 15px rgba(59, 130, 246, 0.5)",
           animation: "pulse 2.5s infinite",
         }}
       >
@@ -440,21 +323,8 @@ const NewsroomListing = () => {
             d="M12 4v16m8-8H4"
           />
         </svg>
-
-        <style jsx>{`
-          @keyframes pulse {
-            0%,
-            100% {
-              transform: scale(1);
-              box-shadow: 0 8px 15px rgba(59, 130, 246, 0.5);
-            }
-            50% {
-              transform: scale(1.1);
-              box-shadow: 0 12px 20px rgba(59, 130, 246, 0.7);
-            }
-          }
-        `}</style>
       </button>
+
       {/* Modal */}
       {isModalOpen && (
         <div
@@ -519,6 +389,7 @@ const NewsroomListing = () => {
                   placeholder="https://example.com/image.jpg"
                 />
               </LabelInputContainer>
+
               <LabelInputContainer>
                 <Label htmlFor="description">Description</Label>
                 <textarea
@@ -543,6 +414,7 @@ const NewsroomListing = () => {
                   required
                 />
               </LabelInputContainer>
+
               <LabelInputContainer>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -566,10 +438,9 @@ const NewsroomListing = () => {
                 </button>
                 <button
                   type="submit"
-                  className="group/btn relative block h-10 px-5 rounded-md bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:brightness-110 transition-all duration-300"
+                  className="group/btn relative block h-10 px-5 rounded-md bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-sm font-semibold text-white shadow-md ring-1 ring-purple-200 hover:ring-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition"
                 >
-                  Add Event →
-                  <BottomGradient />
+                  Submit
                 </button>
               </div>
             </form>
@@ -580,16 +451,8 @@ const NewsroomListing = () => {
   );
 };
 
-export default NewsroomListing;
-const BottomGradient = () => (
-  <>
-    <span className="absolute inset-x-0 -bottom-px block h-px w-full bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-0 transition duration-500 group-hover/btn:opacity-100" />
-    <span className="absolute inset-x-10 -bottom-px mx-auto block h-px w-1/2 bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 blur-sm transition duration-500 group-hover/btn:opacity-100" />
-  </>
+const LabelInputContainer = ({ children }) => (
+  <div className="flex flex-col space-y-1">{children}</div>
 );
 
-const LabelInputContainer = ({ children, className }) => (
-  <div className={cn("flex w-full flex-col space-y-1", className)}>
-    {children}
-  </div>
-);
+export default NewsroomListing;
