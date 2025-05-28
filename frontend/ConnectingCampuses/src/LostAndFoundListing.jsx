@@ -3,163 +3,11 @@ import { Label } from "./components/ui/label";
 import { Input } from "./components/ui/input";
 import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
+import { USER_API_ENDPOINT } from "../constants";
+import axios from "axios";
 
 // Sample data
-const lostAndFoundItems = [
-  {
-    id: 1,
-    title: "Lost: Black Wallet",
-    description: "Lost near the main library on May 15.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80",
-    contact: "john.doe@college.edu",
-    whatsapp: "1234567890",
-  },
-  {
-    id: 2,
-    title: "Found: Casio Calculator",
-    description: "Found in Room B101, belongs to a 2nd-year student.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80",
-    contact: "jane.smith@college.edu",
-    whatsapp: "1987654321",
-  },
-  {
-    id: 3,
-    title: "Lost: Blue Water Bottle",
-    description: "Left in the gym on May 14.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?auto=format&fit=crop&w=600&q=80",
-    contact: "alex.lee@college.edu",
-    whatsapp: "1122334455",
-  },
-  {
-    id: 4,
-    title: "Found: Silver Keychain",
-    description: "Found near cafeteria entrance.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80",
-    contact: "maria.garcia@college.edu",
-    whatsapp: "2233445566",
-  },
-  {
-    id: 5,
-    title: "Lost: Red Backpack",
-    description: "Last seen in the auditorium.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1514474959185-1472c5d4aee5?auto=format&fit=crop&w=600&q=80",
-    contact: "samuel.kim@college.edu",
-    whatsapp: "3344556677",
-  },
-  {
-    id: 6,
-    title: "Lost: Samsung Galaxy Phone",
-    description: "Lost in the canteen during lunch hours.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1510552776732-03e61cf4b144?auto=format&fit=crop&w=600&q=80",
-    contact: "tina.fernandez@college.edu",
-    whatsapp: "4455667788",
-  },
-  {
-    id: 7,
-    title: "Found: Green Notebook",
-    description: "Found in the CS department corridor.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80",
-    contact: "raj.kapoor@college.edu",
-    whatsapp: "5566778899",
-  },
-  {
-    id: 8,
-    title: "Lost: AirPods Case",
-    description: "Dropped near the bus stop around 5 PM.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
-    contact: "lisa.morris@college.edu",
-    whatsapp: "6677889900",
-  },
-  {
-    id: 9,
-    title: "Found: Black Umbrella",
-    description: "Found inside Room A203 after the rain.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1615791390607-28f5d31e5fd0?auto=format&fit=crop&w=600&q=80",
-    contact: "aarav.sharma@college.edu",
-    whatsapp: "7788990011",
-  },
-  {
-    id: 10,
-    title: "Lost: ID Card",
-    description: "Dropped between hostel and admin block.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1523966211575-eb4a01e7dd53?auto=format&fit=crop&w=600&q=80",
-    contact: "nina.joseph@college.edu",
-    whatsapp: "8899001122",
-  },
-  {
-    id: 11,
-    title: "Found: Set of Keys",
-    description: "Found near the sports ground.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1508873696983-2dfd5898f6b9?auto=format&fit=crop&w=600&q=80",
-    contact: "david.jones@college.edu",
-    whatsapp: "9900112233",
-  },
-  {
-    id: 12,
-    title: "Lost: Grey Hoodie",
-    description: "Left in the computer lab.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=600&q=80",
-    contact: "emma.wilson@college.edu",
-    whatsapp: "1011121314",
-  },
-  {
-    id: 13,
-    title: "Found: Earphones",
-    description: "Found in the cafeteria.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516707570260-2bc73ccae4f8?auto=format&fit=crop&w=600&q=80",
-    contact: "oliver.brown@college.edu",
-    whatsapp: "1213141516",
-  },
-  {
-    id: 14,
-    title: "Lost: Leather Notebook",
-    description: "Misplaced in the lecture hall.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1473445361083-64b1a43ee84b?auto=format&fit=crop&w=600&q=80",
-    contact: "mia.green@college.edu",
-    whatsapp: "1718192021",
-  },
-  {
-    id: 15,
-    title: "Found: USB Drive",
-    description: "Found near the library entrance.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=600&q=80",
-    contact: "liam.martin@college.edu",
-    whatsapp: "2223242526",
-  },
-  {
-    id: 16,
-    title: "Lost: Black Sunglasses",
-    description: "Lost during the picnic at the park.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80",
-    contact: "sophia.turner@college.edu",
-    whatsapp: "2728293031",
-  },
-  {
-    id: 17,
-    title: "Found: Wristwatch",
-    description: "Found near the basketball court.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1501425359012-7e40d0d7d79e?auto=format&fit=crop&w=600&q=80",
-    contact: "ethan.moore@college.edu",
-    whatsapp: "3233343536",
-  },
-];
+
 const WhatsappIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -189,13 +37,16 @@ const LostAndFoundListing = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
+  const [items, setItems] = useState([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({
     title: "",
     description: "",
     imageUrl: "",
-    contact: "",
+    contact: user?.email || "",
     whatsapp: "",
+    date: "", // <-- Added
   });
 
   useEffect(() => {
@@ -216,47 +67,114 @@ const LostAndFoundListing = () => {
     const { name, value } = e.target;
     setNewItem((prev) => ({ ...prev, [name]: value }));
   };
-
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
 
     if (
       !newItem.title ||
       !newItem.description ||
       !newItem.contact ||
-      !newItem.whatsapp
+      !newItem.whatsapp ||
+      !newItem.date // <-- now also checking for date
     ) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    // Add the new item (replace with your backend logic)
-    lostAndFoundItems.push({
-      ...newItem,
-      id: lostAndFoundItems.length + 1,
-    });
-
-    setIsModalOpen(false);
-    setNewItem({
-      title: "",
-      description: "",
-      imageUrl: "",
-      contact: user?.email || "",
-      whatsapp: "",
-    });
+    try {
+      const res = await axios.post(
+        `${USER_API_ENDPOINT}/api/l-f-items/`,
+        newItem,
+        {
+          withCredentials: true, // 👈 this sends cookies (like session or JWT)
+        }
+      );
+      setItems((prevItems) => [...prevItems, res.data]); // Add new item to local state
+      setIsModalOpen(false);
+      setNewItem({
+        title: "",
+        description: "",
+        imageUrl: "",
+        contact: user?.email || "",
+        whatsapp: "",
+        date: "", // clear it
+      });
+    } catch (error) {
+      console.error("Failed to add item:", error);
+      alert("Error submitting item. Please try again.");
+    }
   };
 
-  const filteredItems = useMemo(() => {
-    const filtered = lostAndFoundItems.filter(
-      (item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
+        setItems(res.data); // Make sure your backend sends data in res.data
+        console.log("Fetched items:", res.data);
+      } catch (error) {
+        console.error("Failed to fetch items:", error);
+      }
+    };
 
-    return filtered.sort((a, b) =>
-      sortOrder === "newest" ? b.id - a.id : a.id - b.id
+    fetchItems();
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // normalize to midnight
+
+    const filtered = items.filter((item) => {
+      const itemDate = new Date(item.date || item.createdAt || 0);
+      itemDate.setHours(0, 0, 0, 0);
+      return (
+        (item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        itemDate <= today
+      );
+    });
+
+    // 🔽 Apply sort order
+    const sorted = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.date || a.createdAt || 0);
+      const dateB = new Date(b.date || b.createdAt || 0);
+      return sortOrder === "newest"
+        ? dateB - dateA // descending
+        : dateA - dateB; // ascending
+    });
+
+    return sorted;
+  }, [items, searchQuery, sortOrder]); // <-- Include sortOrder as a dependency
+
+  const formatDate = (dateString) => {
+    const d = new Date(dateString);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0"); // Month is 0-indexed
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this item?"
     );
-  }, [searchQuery, sortOrder]);
+    if (!confirmed) return;
+
+    console.log("Attempting to delete item with ID:", id);
+
+    try {
+      await axios.delete(`${USER_API_ENDPOINT}/api/l-f-items/${id}`, {
+        withCredentials: true, // include cookies or session tokens
+      });
+
+      console.log("Item deleted successfully");
+      alert("Item deleted successfully!");
+
+      setItems((prev) => prev.filter((item) => (item._id || item.id) !== id));
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Failed to delete the item. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -266,7 +184,7 @@ const LostAndFoundListing = () => {
         </h1>
       </div>
 
-      <main className="flex flex-col lg:flex-row gap-8 p-4 sm:p-6 bg-gradient-to-br from-orange-50 via-white to-orange-100 min-h-[80vh]">
+      <main className="flex flex-col lg:flex-row gap-8 p-4 sm:p-6 bg-gradient-to-br from-orange-50 via-white to-orange-100 min-h-[80vh] custom-scrollbar">
         <aside className="w-full lg:w-80 p-4 sm:p-6 bg-gradient-to-br from-zinc-800 via-zinc-900 to-black shadow-lg rounded-xl mb-6 lg:mb-0 border border-zinc-700 transition-all duration-300 hover:scale-[1.01] hover:shadow-2xl">
           <h2 className="text-2xl font-bold mb-6 text-white text-center">
             🔍 Filter Items
@@ -298,20 +216,43 @@ const LostAndFoundListing = () => {
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
           {filteredItems.length === 0 ? (
             <p className="text-center col-span-full text-gray-500">
-              No items found matching your criteria.
+              No items found matching your criteria or all items have future
+              dates.
             </p>
           ) : (
-            filteredItems.map((item) => {
+            filteredItems.map((item, index) => {
               const whatsappLink = `https://wa.me/${
                 item.whatsapp
               }?text=Hi%2C%20I'm%20inquiring%20about%20your%20item:%20${encodeURIComponent(
                 item.title
               )}`;
+
+              const key = item._id || item.id || `${item.title}-${index}`;
+
               return (
                 <article
-                  key={item.id}
+                  key={key}
                   className="rounded-lg relative overflow-hidden bg-gray-100 w-full h-56 sm:h-64 md:h-72 lg:h-96 shadow-md"
                 >
+                  {/* Trash Button if user is owner */}
+                  {item.contact === user?.email && (
+                    <button
+                      onClick={() => handleDelete(key)}
+                      className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-md z-10"
+                      aria-label="Delete this item"
+                      title="Delete item"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                      </svg>
+                    </button>
+                  )}
+
                   <img
                     src={item.imageUrl}
                     alt={item.title}
@@ -327,7 +268,10 @@ const LostAndFoundListing = () => {
                         {item.description}
                       </p>
                       <p className="text-xs sm:text-sm font-mono opacity-80 mt-1 break-words">
-                        Contact: {item.contact}
+                        Posted by: {item.contact}
+                      </p>
+                      <p className="text-xs sm:text-sm italic opacity-80 mt-1">
+                        Date: {formatDate(item.date)}
                       </p>
                     </div>
                     <div className="flex justify-end">
@@ -393,7 +337,7 @@ const LostAndFoundListing = () => {
             onClick={() => setIsModalOpen(false)}
           >
             <div
-              className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-xl max-w-lg w-full max-h-screen overflow-auto shadow-2xl"
+              className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-xl max-w-lg w-full max-h-screen overflow-auto shadow-2xl custom-scrollbar"
               onClick={(e) => e.stopPropagation()}
               style={{ WebkitOverflowScrolling: "touch" }} // smooth scrolling on iOS
             >
@@ -448,6 +392,17 @@ const LostAndFoundListing = () => {
                     readOnly
                     placeholder={user?.email}
                     className="cursor-not-allowed w-full"
+                  />
+                </LabelInputContainer>
+                <LabelInputContainer>
+                  <Label htmlFor="date">Date Lost/Found*</Label>
+                  <Input
+                    name="date"
+                    type="date"
+                    value={newItem.date}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full"
                   />
                 </LabelInputContainer>
 

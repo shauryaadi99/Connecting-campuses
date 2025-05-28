@@ -1,24 +1,25 @@
-import express from "express";
+import express from 'express';
 import {
-  createNewsroomPost,
-  getAllNewsroomPosts,
-  getNewsroomPostById,
-  deleteNewsroomPost,
-} from "../controllers/newsroomController.js";
+  createNewsroomEvent,
+  getAllNewsroomEvents,
+  updateNewsroomEvent,
+  deleteNewsroomEvent,
+  getNewsroomEventsByEmail
+} from '../controllers/newsroom.controller.js';
+
 import isAuthenticated from '../middlewares/isAuthenticated.js';
 
 const router = express.Router();
 
-// @route   POST /api/newsroom
-router.post("/", isAuthenticated, createNewsroomPost);
+// Public routes
+router.get('/', getAllNewsroomEvents);
 
-// @route   GET /api/newsroom
-router.get("/", getAllNewsroomPosts);
+// Protected routes (requires login)
+router.post('/', isAuthenticated, createNewsroomEvent);
+router.put('/:id', isAuthenticated, updateNewsroomEvent);
+router.delete('/:id', isAuthenticated, deleteNewsroomEvent);
 
-// @route   GET /api/newsroom/:id
-router.get("/:id", getNewsroomPostById);
-
-// @route   DELETE /api/newsroom/:id
-router.delete("/:id", isAuthenticated, deleteNewsroomPost);
+// Get all listings by logged-in user's email (secured)
+router.get('/by-user/:email', isAuthenticated, getNewsroomEventsByEmail);
 
 export default router;

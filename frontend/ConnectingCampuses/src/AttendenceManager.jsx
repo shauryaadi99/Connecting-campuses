@@ -6,7 +6,7 @@ import AttendanceChart from "./connectingcomponents/AttendenceChart";
 import AttendanceModal from "./connectingcomponents/AttendenceModal";
 import Calendar from "./connectingcomponents/Calender";
 import Navbar from "./connectingcomponents/MyattendanceNavbar";
-import { useAuth } from "./context/AuthContext"; // Adjust the import path as necessary
+import { useAuth } from "./context/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
 
 const AttendenceManager = () => {
@@ -19,26 +19,19 @@ const AttendenceManager = () => {
   const [modalDate, setModalDate] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Add this inside the AttendenceManager component, before the return statement
-
   useEffect(() => {
     if (!user) {
-      alert(
-        "No user logged in, redirecting to home.\nPlease log in to access the attendance manager."
-      );
-      window.location.href = "/";
+      toast.error("Please log in to access attendance manager.");
+      navigate("/");
       return;
     }
 
     const fetchAttendance = async () => {
       try {
         const token = user?.token || localStorage.getItem("token");
-        console.log("[AttendenceManager] fetchAttendance token:", token);
 
         if (!token) {
-          console.error(
-            "[AttendenceManager] No token found, redirecting to login."
-          );
+          toast.error("No token found. Redirecting to login.");
           navigate("/");
           return;
         }
@@ -47,36 +40,37 @@ const AttendenceManager = () => {
           `${USER_API_ENDPOINT}/api/attendance/`,
           {
             withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        );
-
-        console.log(
-          "[AttendenceManager] fetchAttendance response data:",
-          response.data
         );
 
         const data = response.data;
 
+        if (!Array.isArray(data) || data.length === 0) {
+          toast.error("No attendance records found.");
+          return;
+        }
+
         const subs = data.map((rec) => rec.subject);
-        console.log("[AttendenceManager] Subjects found:", subs);
         setSubjects(subs);
 
         const attendanceData = {};
         data.forEach(({ subject, records }) => {
-          attendanceData[subject] = records;
+          if (subject && records) {
+            attendanceData[subject] = records;
+          }
         });
-        console.log(
-          "[AttendenceManager] Processed attendance data:",
-          attendanceData
-        );
-        setAttendance(attendanceData);
 
-        if (subs.length > 0) {
-          setSelectedSubject(subs[0]);
-          console.log("[AttendenceManager] Default selectedSubject:", subs[0]);
-        }
+        setAttendance(attendanceData);
+        if (subs.length > 0) setSelectedSubject(subs[0]);
       } catch (error) {
-        console.error("[AttendenceManager] Failed to fetch attendance:", error);
+        const msg =
+          error.response?.statusText ||
+          error.message ||
+          "An error occurred while fetching attendance.";
+        toast.error(`Error: ${msg}`);
       }
     };
 
@@ -84,59 +78,41 @@ const AttendenceManager = () => {
   }, [user, navigate]);
 
   const updateAttendance = async (date, status) => {
-    if (!selectedSubject) {
-      console.warn(
-        "[AttendenceManager] No subject selected. Cannot update attendance."
-      );
-      return;
-    }
+    if (!selectedSubject) return;
 
     try {
       const token = localStorage.getItem("token");
-      console.log("[AttendenceManager] updateAttendance token:", token);
-
       if (!token) {
-        console.error("[AttendenceManager] No token found");
+        toast.error("No token found");
         return;
       }
-
-      console.log(
-        `[AttendenceManager] Updating attendance - subject: ${selectedSubject}, date: ${date}, status: ${status.toLowerCase()}`
-      );
 
       await axios.post(
         `${USER_API_ENDPOINT}/api/attendance/`,
         {
           subject: selectedSubject,
-          date: date, // example: "2025-05-22"
-          status: status.toLowerCase(), // ensure lowercase
+          date,
+          status: status.toLowerCase(),
         },
-        {
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       setAttendance((prev) => {
         const updated = { ...prev };
         if (!updated[selectedSubject]) updated[selectedSubject] = {};
         updated[selectedSubject][date] = status;
-        console.log("[AttendenceManager] Updated attendance state:", updated);
         return updated;
       });
 
       setModalDate(null);
     } catch (error) {
-      console.error("[AttendenceManager] Failed to update attendance:", error);
+      toast.error("Failed to update attendance.");
     }
   };
 
   const getChartDataForSubject = (subject) => {
     const records = attendance[subject] || {};
-    const statusCounts = {
-      present: 0,
-      absent: 0,
-      cancelled: 0,
-    };
+    const statusCounts = { present: 0, absent: 0, cancelled: 0 };
 
     Object.values(records).forEach((status) => {
       const normalized = status.toLowerCase();

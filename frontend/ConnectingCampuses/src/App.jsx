@@ -15,6 +15,7 @@ import Footer from "./connectingcomponents/Footer";
 import UpdateProfileForm from "./UpdateProfileForm";
 import DeleteSubjectExample from "./DeleteSubjectExample";
 import ClearAttendanceButton from "./clearAllattendencefromdb";
+import UserNewsroomList from "./UserNewsroomList";
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
         <Route path="/profile" element={<ProfileCard />} />
         <Route path="/update-profile" element={<UpdateProfileForm />} />
         <Route path="/deleteallAttendance" element={<ClearAttendanceButton />} />
+        <Route path="/mynewsroomlistings" element={<UserNewsroomList />} />
 
       </Routes>
       <Footer />

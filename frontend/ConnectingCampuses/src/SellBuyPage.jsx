@@ -1,16 +1,21 @@
-import React, { useState } from "react";
-import marketItems from "./connectingcomponents/marketItems";
+import React, { useEffect, useState } from "react";
+import axios from "axios"; // Axios with credentials
 import { Label } from "./components/ui/label";
 import { Input } from "./components/ui/input";
 import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
+import { USER_API_ENDPOINT } from "../constants";
 
 const SellBuyPage = () => {
   const [search, setSearch] = useState("");
+  const { user } = useAuth();
   const [category, setCategory] = useState("All Categories");
   const [priceRange, setPriceRange] = useState(25000);
   const [sortOption, setSortOption] = useState("Newest First");
   const [showForm, setShowForm] = useState(false);
+  const [marketItems, setMarketItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [newListing, setNewListing] = useState({
     title: "",
     price: "",
@@ -18,13 +23,31 @@ const SellBuyPage = () => {
     imageUrl: "",
     description: "",
     whatsappNumber: "",
+    email: user?.email || "", // Use user's email if available
   });
 
-  const { user } = useAuth();
+  // Fetch Listings from API
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        setLoading(true);
+        const res = await axios.get(
+          `${USER_API_ENDPOINT}/api/sellbuys/listings`
+        );
+        setMarketItems(res.data);
+      } catch (err) {
+        setError("Failed to load listings.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchListings();
+  }, []);
 
   const parsePrice = (priceStr) => {
-    if (!priceStr) return 0;
-    return Number(priceStr.replace(/[^0-9]/g, ""));
+    if (priceStr == null) return 0;
+    return Number(String(priceStr).replace(/[^0-9]/g, ""));
   };
 
   const categories = Array.from(
@@ -64,18 +87,55 @@ const SellBuyPage = () => {
     setNewListing({ ...newListing, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  // Before submitting, format properly (example)
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("New Listing:", newListing);
-    setShowForm(false);
-    setNewListing({
-      title: "",
-      price: "",
-      category: "",
-      imageUrl: "",
-      description: "",
-      whatsappNumber: "",
-    });
+
+    const formatWhatsApp = (num) => {
+      const cleaned = num.replace(/\D/g, "");
+      return cleaned.startsWith("91") ? cleaned : `91${cleaned}`;
+    };
+
+    const formattedPayload = {
+      ...newListing,
+      whatsappNumber: formatWhatsApp(newListing.whatsappNumber),
+      price: Number(newListing.price),
+      email: user.email,
+    };
+
+    try {
+      const res = await axios.post(
+        `${USER_API_ENDPOINT}/api/sellbuys/listings`,
+        formattedPayload,
+        { withCredentials: true }
+      );
+
+      alert("Listing created successfully!");
+      setMarketItems((prev) => [res.data.data, ...prev]);
+      setShowForm(false);
+      setNewListing({
+        title: "",
+        price: "",
+        category: "",
+        imageUrl: "", // No validation needed
+        description: "",
+        whatsappNumber: "",
+        email: user?.email || "",
+      });
+
+      console.log("Submitted payload:", formattedPayload);
+    } catch (error) {
+      console.error(
+        "Failed to submit listing:",
+        error.response?.data || error.message
+      );
+      alert(
+        `Failed to create listing. Reason: ${
+          error.response?.data?.error || "Unknown error"
+        }`
+      );
+    }
   };
 
   const handleSellClick = () => {
@@ -103,7 +163,7 @@ const SellBuyPage = () => {
           onClick={() => setShowForm(false)}
         >
           <div
-            className="bg-gray-900 rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-md sm:max-w-lg max-h-[95vh] flex flex-col text-gray-100"
+            className="bg-gray-900 rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-md sm:max-w-lg max-h-[95vh] flex flex-col text-gray-100 custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-xl sm:text-2xl font-bold mb-5 text-white">
@@ -285,7 +345,9 @@ const SellBuyPage = () => {
       <div className="md:w-4/5 w-full">
         <div className="flex flex-col sm:flex-row sm:justify-between items-center mb-4">
           <h2 className="text-xl font-semibold mb-2 sm:mb-0">
-            Showing {sortedProducts.length} product(s)
+            {loading
+              ? "Loading listings..."
+              : `Showing ${sortedProducts.length} product(s)`}
           </h2>
           <select
             className="bg-gray-800 p-2 rounded"
@@ -298,38 +360,94 @@ const SellBuyPage = () => {
           </select>
         </div>
 
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedProducts.map((product) => (
             <div
-              key={product.id}
-              className="bg-gray-900 rounded-lg shadow-md p-4 hover:scale-[1.02] transition-transform duration-300 hover:shadow-xl"
+              key={product._id}
+              className="relative bg-gray-900 rounded-lg shadow-md p-4 hover:scale-[1.02] transition-transform duration-300 hover:shadow-xl"
             >
+              {/* 🗑 Delete Button - Top Right */}
+              {user?.email === product.email && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await axios.delete(
+                        `${USER_API_ENDPOINT}/api/sellbuys/listings/${product._id}`,
+                        {
+                          withCredentials: true,
+                        }
+                      );
+                      setMarketItems((prev) =>
+                        prev.filter((item) => item._id !== product._id)
+                      );
+                    } catch {
+                      alert("Failed to delete listing.");
+                    }
+                  }}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-400 z-10"
+                  title="Delete listing"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              )}
               <img
                 src={product.imageUrl}
                 alt={product.title}
                 className="rounded w-full h-48 object-cover"
               />
               <h3 className="text-lg font-semibold mt-2">{product.title}</h3>
-              <p className="text-blue-400 font-bold">{product.price}</p>
-              <p className="text-sm text-gray-300 mb-2">
+              <p className="text-blue-400 font-bold">₹{product.price}</p>
+              <p className="text-sm text-gray-300">
                 {product.description}
               </p>
+              <p className="text-sm text-gray-300 mb-8">
+                Posted by: {product.email}
+              </p>{" "}
+              {/* Give space at bottom */}
+              {/* 📲 WhatsApp Icon - Bottom Right */}
               {product.whatsappNumber && (
                 <a
                   href={`https://wa.me/${product.whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 text-sm"
+                  className="absolute bottom-3 right-3 text-green-400 hover:text-green-300"
+                  title="Contact on WhatsApp"
                 >
                   <svg
+                    height="24"
+                    width="24"
+                    viewBox="0 0 58 58"
+                    fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    fill="currentColor"
-                    className="w-5 h-5"
-                    viewBox="0 0 24 24"
                   >
-                    <path d="M20.52 3.48A11.87 11.87 0 0 0 3.5 20.5L2 24l3.57-1.46a11.86 11.86 0 0 0 14.95-19.06zM12 21.3a9.3 9.3 0 0 1-4.74-1.3l-.34-.2-2.53.99.93-2.46-.22-.35A9.29 9.29 0 1 1 21.3 12 9.31 9.31 0 0 1 12 21.3zm5.06-6.66c-.28-.14-1.65-.82-1.91-.91s-.45-.14-.64.14-.73.91-.9 1.1-.33.21-.61.07a7.64 7.64 0 0 1-2.25-1.38 8.47 8.47 0 0 1-1.57-1.94c-.16-.28-.02-.43.12-.57.13-.13.29-.34.43-.51s.19-.28.29-.46a.54.54 0 0 0 0-.51c-.14-.14-.64-1.55-.88-2.12s-.47-.47-.64-.48-.35 0-.54 0a1.03 1.03 0 0 0-.74.34 3.08 3.08 0 0 0-.96 2.29 5.36 5.36 0 0 0 1.14 2.91 12.41 12.41 0 0 0 4.82 4.11 13.39 13.39 0 0 0 1.29.48 3.13 3.13 0 0 0 1.43.09c.44-.06 1.36-.56 1.55-1.1s.19-1 .14-1.1-.26-.14-.54-.28z" />
+                    <path
+                      fill="#2CB742"
+                      d="M0,58l4.988-14.963C2.457,38.78,1,33.812,1,28.5C1,12.76,13.76,0,29.5,0S58,12.76,58,28.5 S45.24,57,29.5,57c-4.789,0-9.299-1.187-13.26-3.273L0,58z"
+                    />
+                    <path
+                      fill="#FFFFFF"
+                      d="M47.683,37.985c-1.316-2.487-6.169-5.331-6.169-5.331c-1.098-0.626-2.423-0.696-3.049,0.42
+                  c0,0-1.577,1.891-1.978,2.163c-1.832,1.241-3.529,1.193-5.242-0.52l-3.981-3.981l-3.981-3.981
+                  c-1.713-1.713-1.761-3.41-0.52-5.242c0.272-0.401,2.163-1.978,2.163-1.978c1.116-0.627,1.046-1.951,0.42-3.049
+                  c0,0-2.844-4.853-5.331-6.169c-1.058-0.56-2.357-0.364-3.203,0.482l-1.758,1.758c-5.577,5.577-2.831,11.873,2.746,17.45
+                  l5.097,5.097l5.097,5.097c5.577,5.577,11.873,8.323,17.45,2.746l1.758-1.758C48.048,40.341,48.243,39.042,47.683,37.985z"
+                    />
                   </svg>
-                  Chat on WhatsApp
                 </a>
               )}
             </div>

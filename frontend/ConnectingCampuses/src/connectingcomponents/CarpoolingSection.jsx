@@ -1,12 +1,26 @@
-import React from "react";
-import carpoolPosts from "./carpoolPosts.js";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-export default function CarpoolingSection() {
-  const posts = carpoolPosts.slice(0, 6);
+import { USER_API_ENDPOINT } from "../../constants";
+
+export default function CarpoolingSection({ user }) {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get(`${USER_API_ENDPOINT}/api/carpools`, { withCredentials: true })
+      .then((res) => setPosts(res.data))
+      .catch((err) => console.error("Error fetching carpools:", err.message));
+  }, []);
 
   const getPhoneNumberFromEmail = (email) => {
-    return "919876543210";
+    // This function can be customized based on how you want to extract phone number
+    // For now, fallback to default number or fetch from post.phoneNumber if available
+    const foundPost = posts.find((p) => p.userEmail === email);
+    return foundPost?.phoneNumber || "919876543210";
   };
+
+  const displayedPosts = posts.slice(0, 6);
 
   return (
     <section id="carpooling" className="bg-white py-16">
@@ -16,43 +30,73 @@ export default function CarpoolingSection() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-          {posts.map((post) => {
+          {displayedPosts.map((post) => {
             const phone = getPhoneNumberFromEmail(post.userEmail);
             return (
               <div
-                key={post.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-md p-6 transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+                key={post._id}
+                className="relative bg-white rounded-2xl border border-slate-200 shadow-md p-6 transition-transform duration-300 hover:scale-105 hover:shadow-xl"
               >
-                <p className="flex items-center justify-between mb-2 text-sm text-slate-600">
-                  <span>
-                    <strong>User:</strong> {post.userEmail}
-                  </span>
-                  <a
-                    href={`https://wa.me/${phone}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Chat on WhatsApp"
-                    className="text-green-600 hover:text-green-800 transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="22"
-                      height="22"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M20.52 3.478a11.838 11.838 0 00-16.74 0 11.852 11.852 0 00-3.57 8.39c0 2.096.546 4.142 1.58 5.953L2 22l4.275-1.338a11.825 11.825 0 005.95 1.58h.003a11.854 11.854 0 008.29-3.572 11.839 11.839 0 000-16.72zm-7.53 16.04a9.648 9.648 0 01-4.897-1.44l-.35-.213-3.188 1 1.05-3.1-.226-.357a9.633 9.633 0 01-1.45-4.84c0-5.34 4.35-9.688 9.7-9.688 2.6 0 5.04 1.015 6.868 2.84a9.678 9.678 0 012.852 6.863 9.647 9.647 0 01-9.745 9.625zm5.4-6.92c-.3-.15-1.772-.873-2.045-.973-.272-.1-.47-.15-.67.15-.2.3-.77.973-.945 1.17-.174.2-.35.224-.65.075-.3-.15-1.26-.464-2.4-1.48-.89-.79-1.49-1.76-1.66-2.06-.174-.3-.018-.46.13-.61.13-.13.3-.35.45-.525.15-.174.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.67-1.6-.92-2.19-.242-.575-.5-.5-.67-.51-.174-.025-.37-.025-.57-.025-.2 0-.525.075-.8.375-.275.3-1.05 1.03-1.05 2.5s1.08 2.9 1.23 3.1c.15.2 2.12 3.24 5.15 4.54.72.31 1.28.495 1.72.63.72.22 1.38.19 1.9.115.58-.086 1.77-.72 2.02-1.42.25-.7.25-1.3.175-1.43-.075-.13-.275-.2-.57-.35z" />
-                    </svg>
-                  </a>
+                <div className="mb-3 text-sm text-slate-600">
+                  <strong>User:</strong> {post.email || "Anonymous"}
+                </div>
+
+                <p className="mb-1">
+                  <strong>From:</strong> {post.pickupLocation}
                 </p>
-                <p className="mb-1"><strong>From:</strong> {post.from}</p>
-                <p className="mb-1"><strong>To:</strong> {post.to}</p>
-                <p className="mb-1"><strong>Date:</strong> {post.date}</p>
-                <p className="mb-1"><strong>Time:</strong> {post.time}</p>
-                <p className="mb-1"><strong>Seats:</strong> {post.seatsAvailable}</p>
-                {post.note && (
-                  <p className="text-slate-500 italic mt-2">"{post.note}"</p>
+                <p className="mb-1">
+                  <strong>To:</strong> {post.dropLocation}
+                </p>
+                <p className="mb-1">
+                  <strong>Date:</strong>{" "}
+                  {new Date(post.travelDate).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+
+                <p className="mb-1">
+                  <strong>Time:</strong> {post.departureTime}
+                </p>
+                <p className="mb-1">
+                  <strong>Seats:</strong> {post.seatsAvailable}
+                </p>
+
+                {post.additionalNotes && (
+                  <p className="text-slate-500 italic mt-2 text-sm">
+                    "{post.additionalNotes}"
+                  </p>
                 )}
+
+                <a
+                  href={`https://wa.me/${post.phoneNumber}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Chat on WhatsApp"
+                  className="absolute bottom-3 right-3  transition-transform"
+                >
+                  <svg
+                    height="32"
+                    width="32"
+                    viewBox="0 0 58 58"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fill="#2CB742"
+                      d="M0,58l4.988-14.963C2.457,38.78,1,33.812,1,28.5C1,12.76,13.76,0,29.5,0S58,12.76,58,28.5 S45.24,57,29.5,57c-4.789,0-9.299-1.187-13.26-3.273L0,58z"
+                    />
+                    <path
+                      fill="#FFFFFF"
+                      d="M47.683,37.985c-1.316-2.487-6.169-5.331-6.169-5.331c-1.098-0.626-2.423-0.696-3.049,0.42
+       c0,0-1.577,1.891-1.978,2.163c-1.832,1.241-3.529,1.193-5.242-0.52l-3.981-3.981l-3.981-3.981
+       c-1.713-1.713-1.761-3.41-0.52-5.242c0.272-0.401,2.163-1.978,2.163-1.978c1.116-0.627,1.046-1.951,0.42-3.049
+       c0,0-2.844-4.853-5.331-6.169c-1.058-0.56-2.357-0.364-3.203,0.482l-1.758,1.758c-5.577,5.577-2.831,11.873,2.746,17.45
+       l5.097,5.097l5.097,5.097c5.577,5.577,11.873,8.323,17.45,2.746l1.758-1.758C48.048,40.341,48.243,39.042,47.683,37.985z"
+                    />
+                  </svg>
+                </a>
               </div>
             );
           })}
