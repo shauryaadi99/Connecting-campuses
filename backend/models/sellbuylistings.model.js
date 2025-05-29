@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const sellbuySchema = new mongoose.Schema({
   title: {
@@ -16,20 +16,21 @@ const sellbuySchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  imageUrl: {
-    type: String,
-    default: "",
+  photo: {
+    data: Buffer,
+    contentType: String,
   },
   description: {
     type: String,
-    default: '',
+    default: "",
   },
   whatsappNumber: {
     type: String,
     required: true,
     validate: {
       validator: (v) => /^91\d{10}$/.test(v),
-      message: (props) => `${props.value} is not a valid Indian WhatsApp number!`,
+      message: (props) =>
+        `${props.value} is not a valid Indian WhatsApp number!`,
     },
   },
   email: {
@@ -37,8 +38,7 @@ const sellbuySchema = new mongoose.Schema({
     required: true,
     lowercase: true,
     validate: {
-      validator: (v) =>
-        /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/.test(v),
+      validator: (v) => /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/.test(v),
       message: (props) => `${props.value} is not a valid email!`,
     },
   },
@@ -48,5 +48,5 @@ const sellbuySchema = new mongoose.Schema({
   },
 });
 
-const SellBuy = mongoose.model('SellBuy', sellbuySchema);
+const SellBuy = mongoose.model("SellBuy", sellbuySchema);
 export default SellBuy;

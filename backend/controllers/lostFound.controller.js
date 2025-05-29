@@ -3,7 +3,7 @@ import LostFoundItem from "../models/LostFoundItem.model.js";
 // Add new lost/found item
 export const addItem = async (req, res) => {
   try {
-    const { title, description, imageUrl, contact, whatsapp, date } = req.body;
+    const { title, description, contact, whatsapp, date } = req.body;
 
     if (!title || !description || !contact || !whatsapp || !date) {
       return res
@@ -14,18 +14,25 @@ export const addItem = async (req, res) => {
     const itemDate = new Date(date);
     const today = new Date();
 
-    // Ensure the date is not in the future
     if (itemDate > today) {
       return res.status(400).json({ message: "Date cannot be in the future." });
     }
 
+    const file = req.file; // multer provides this
+    const photo = file
+      ? {
+          data: file.buffer,
+          contentType: file.mimetype,
+        }
+      : null;
+
     const newItem = new LostFoundItem({
       title,
       description,
-      imageUrl,
       contact,
       whatsapp,
       date: itemDate,
+      photo,
     });
 
     const savedItem = await newItem.save();

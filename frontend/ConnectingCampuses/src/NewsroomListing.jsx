@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Linkify from 'react-linkify';
 import { Carousel, Card } from "./components/ui/apple-cards-carousel";
 import { Label } from "./components/ui/label";
 import { Input } from "./components/ui/input";
@@ -8,22 +9,40 @@ import { USER_API_ENDPOINT } from "../constants";
 import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 
-const DummyContent = ({ description }) => (
-  <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-8 md:p-14 rounded-3xl mb-4">
-    <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans max-w-3xl mx-auto">
-      <span className="font-bold text-neutral-700 dark:text-neutral-200">
-        {description}
-      </span>{" "}
-    </p>
-    <img
-      src="https://assets.aceternity.com/macbook.png"
-      alt="Macbook mockup"
-      height="500"
-      width="500"
-      className="md:w-1/2 md:h-1/2 h-full w-full mx-auto object-contain"
-    />
-  </div>
-);
+const getImageSrc = (photo) => {
+  if (!photo?.data?.data || !photo?.contentType) return "";
+
+  const blob = new Blob([new Uint8Array(photo.data.data)], {
+    type: photo.contentType,
+  });
+
+  return URL.createObjectURL(blob); // fast & browser-native
+};
+
+const DummyContent = ({ description, photo }) => {
+  return (
+    <div className="bg-[#F5F5F7] dark:bg-neutral-800 p-10 md:p-16 rounded-3xl mb-6 max-w-5xl mx-auto">
+      <p className="text-neutral-600 dark:text-neutral-400 text-base md:text-2xl font-sans leading-relaxed custom-scrollbar">
+        <Linkify
+          componentDecorator={(decoratedHref, decoratedText, key) => (
+            <a
+              href={decoratedHref}
+              key={key}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline break-words"
+            >
+              {decoratedText}
+            </a>
+          )}
+        >
+          {description}
+        </Linkify>
+        
+      </p>
+    </div>
+  );
+};
 
 const categories = ["All", "Workshop", "Cultural", "Technical", "Podcast"];
 const sortOrders = ["Newest First", "Oldest First"];
@@ -40,15 +59,17 @@ const NewsroomListing = () => {
   );
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null); // <-- Added
+  const [imageURL, setImageURL] = useState(null); // <-- Already declared
 
   const [newEvent, setNewEvent] = useState({
     category: "",
     club: "",
     title: "",
-    src: "",
     date: "",
     email: user?.email || "",
     description: "",
+    file: null, // This will hold the file object
   });
 
   useEffect(() => {
@@ -57,7 +78,6 @@ const NewsroomListing = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Update email if user changes (important)
   useEffect(() => {
     setNewEvent((prev) => ({
       ...prev,
@@ -65,7 +85,6 @@ const NewsroomListing = () => {
     }));
   }, [user]);
 
-  // Fetch events
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -78,7 +97,9 @@ const NewsroomListing = () => {
 
         const mappedEvents = res.data.map((event) => ({
           ...event,
-          content: <DummyContent description={event.description} />,
+          content: (
+            <DummyContent description={event.description} photo={event.photo} />
+          ),
         }));
 
         setEvents(mappedEvents);
@@ -89,6 +110,14 @@ const NewsroomListing = () => {
 
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (imageURL) {
+        URL.revokeObjectURL(imageURL);
+      }
+    };
+  }, [imageURL]);
 
   const clubs = ["All", ...new Set(events.map((item) => item.club))];
 
@@ -127,6 +156,23 @@ const NewsroomListing = () => {
     setIsModalOpen(true);
   };
 
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file); // Local preview only
+      setImageURL(url); // For use in preview components
+      setSelectedFile(file); // File to send in formData
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (imageURL) {
+        URL.revokeObjectURL(imageURL); // Clean up memory
+      }
+    };
+  }, [imageURL]);
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
@@ -140,33 +186,56 @@ const NewsroomListing = () => {
       return;
     }
 
+    if (!selectedFile) {
+      alert("Please upload an event image.");
+      return;
+    }
+
     try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("category", newEvent.category);
+      formData.append("club", newEvent.club);
+      formData.append("title", newEvent.title);
+      formData.append("date", newEvent.date);
+      formData.append("email", newEvent.email);
+      formData.append("description", newEvent.description);
+
       const response = await axios.post(
         `${USER_API_ENDPOINT}/api/college-events/`,
-        newEvent,
+        formData,
         {
           withCredentials: true,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
-
+      console.log(response.data.photo);
       const savedEvent = {
         ...response.data,
-        content: <DummyContent description={response.data.description} />,
+        content: (
+          <DummyContent
+            description={response.data.description}
+            photo={response.data.photo} // ✅ This line is important
+          />
+        ),
       };
 
-      setEvents((prev) => [...prev, savedEvent]);
+      setEvents((prev) => [...prev, savedEvent]); // <--- This adds the new "card"
 
+      // Reset modal and form state
       setIsModalOpen(false);
       setNewEvent({
         category: "",
         club: "",
         title: "",
-        src: "",
         date: "",
         email: user?.email || "",
         description: "",
       });
+      setImageURL(null);
+      setSelectedFile(null);
     } catch (error) {
       alert(
         error.response?.data?.message || error.message || "Failed to add event"
@@ -177,11 +246,16 @@ const NewsroomListing = () => {
   // Optional: Implement event delete handler or remove from props below
   const handleDeleteEvent = async (id) => {
     try {
-      await axios.delete(`${USER_API_ENDPOINT}/api/college-events/${id}`, {
-        withCredentials: true,
-      });
+      const res = await axios.delete(
+        `${USER_API_ENDPOINT}/api/college-events/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log("Delete successful", res);
       setEvents((prev) => prev.filter((event) => event._id !== id));
     } catch (error) {
+      console.error("Delete failed", error);
       alert("Failed to delete event");
     }
   };
@@ -378,7 +452,7 @@ const NewsroomListing = () => {
                 />
               </LabelInputContainer>
 
-              <LabelInputContainer>
+              {/* <LabelInputContainer>
                 <Label htmlFor="src">Image URL</Label>
                 <Input
                   id="src"
@@ -388,7 +462,30 @@ const NewsroomListing = () => {
                   onChange={handleInputChange}
                   placeholder="https://example.com/image.jpg"
                 />
-              </LabelInputContainer>
+              </LabelInputContainer> */}
+              <div className="w-full">
+                <label
+                  htmlFor="file"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Event Image
+                </label>
+                <div className="relative flex items-center justify-between rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 shadow-sm transition focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
+                  <input
+                    id="file"
+                    name="file"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4
+                 file:rounded-lg file:border-0 file:text-sm file:font-semibold
+                 file:bg-indigo-50 file:text-indigo-700
+                 hover:file:bg-indigo-100
+                 dark:file:bg-zinc-700 dark:file:text-white
+                 dark:hover:file:bg-zinc-600"
+                  />
+                </div>
+              </div>
 
               <LabelInputContainer>
                 <Label htmlFor="description">Description</Label>

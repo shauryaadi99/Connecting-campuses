@@ -6,6 +6,13 @@ import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { USER_API_ENDPOINT } from "../constants";
 
+export const getImageSrc = (photo) => {
+  if (!photo?.data?.data || !photo?.contentType) return "";
+
+  const byteArray = new Uint8Array(photo.data.data); // Convert to typed array
+  const blob = new Blob([byteArray], { type: photo.contentType }); // Create blob
+  return URL.createObjectURL(blob); // Return object URL
+};
 const SellBuyPage = () => {
   const [search, setSearch] = useState("");
   const { user } = useAuth();
@@ -20,28 +27,31 @@ const SellBuyPage = () => {
     title: "",
     price: "",
     category: "",
-    imageUrl: "",
     description: "",
     whatsappNumber: "",
-    email: user?.email || "", // Use user's email if available
+    email: user?.email || "",
   });
+  const [imageFile, setImageFile] = useState(null);
 
-  // Fetch Listings from API
+  const fetchListings = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${USER_API_ENDPOINT}/api/sellbuys/listings`);
+
+      const listingsWithImages = res.data.map((item) => ({
+        ...item,
+        imageSrc: getImageSrc(item.photo), // generate src here
+      }));
+      console.log("Fetched listings:", listingsWithImages);
+
+      setMarketItems(listingsWithImages); // update state
+    } catch (err) {
+      setError("Failed to load listings.");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(
-          `${USER_API_ENDPOINT}/api/sellbuys/listings`
-        );
-        setMarketItems(res.data);
-      } catch (err) {
-        setError("Failed to load listings.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchListings();
   }, []);
 
@@ -92,23 +102,35 @@ const SellBuyPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!imageFile) {
+      alert("Please upload an image.");
+      return;
+    }
+
     const formatWhatsApp = (num) => {
       const cleaned = num.replace(/\D/g, "");
       return cleaned.startsWith("91") ? cleaned : `91${cleaned}`;
     };
 
-    const formattedPayload = {
-      ...newListing,
-      whatsappNumber: formatWhatsApp(newListing.whatsappNumber),
-      price: Number(newListing.price),
-      email: user.email,
-    };
-
+    const formData = new FormData();
+    formData.append("title", newListing.title);
+    formData.append("price", newListing.price);
+    formData.append("category", newListing.category);
+    formData.append("description", newListing.description);
+    formData.append(
+      "whatsappNumber",
+      formatWhatsApp(newListing.whatsappNumber)
+    );
+    formData.append("email", user.email);
+    formData.append("file", imageFile);
     try {
       const res = await axios.post(
         `${USER_API_ENDPOINT}/api/sellbuys/listings`,
-        formattedPayload,
-        { withCredentials: true }
+        formData,
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
 
       alert("Listing created successfully!");
@@ -118,13 +140,12 @@ const SellBuyPage = () => {
         title: "",
         price: "",
         category: "",
-        imageUrl: "", // No validation needed
         description: "",
         whatsappNumber: "",
         email: user?.email || "",
       });
-
-      console.log("Submitted payload:", formattedPayload);
+      setImageFile(null);
+      fetchListings(); // Refresh listings
     } catch (error) {
       console.error(
         "Failed to submit listing:",
@@ -218,16 +239,53 @@ const SellBuyPage = () => {
               </LabelInputContainer>
 
               <LabelInputContainer>
-                <Label htmlFor="imageUrl" className="text-gray-300">
-                  Image URL
+                <Label
+                  htmlFor="photo"
+                  className="text-sm font-semibold text-gray-300 mb-2 block"
+                >
+                  Upload Image*
                 </Label>
-                <Input
-                  name="imageUrl"
-                  value={newListing.imageUrl}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com/image.jpg"
-                  className="bg-gray-800 text-gray-100"
-                />
+
+                <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={(e) => setImageFile(e.target.files[0])}
+                    className="hidden"
+                  />
+                  <div className="flex flex-col items-center space-y-2">
+                    <svg
+                      className="w-8 h-8 text-blue-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    <span className="text-sm">
+                      Click to upload or drag and drop
+                    </span>
+                  </div>
+                </label>
+
+                {imageFile && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-400 mb-1">
+                      Selected image:
+                    </p>
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded border border-gray-600"
+                    />
+                  </div>
+                )}
               </LabelInputContainer>
 
               <LabelInputContainer>
@@ -405,16 +463,16 @@ const SellBuyPage = () => {
                   </svg>
                 </button>
               )}
-              <img
-                src={product.imageUrl}
-                alt={product.title}
-                className="rounded w-full h-48 object-cover"
-              />
+              {product.imageSrc && (
+                <img
+                  src={product.imageSrc}
+                  alt={product.title}
+                  className="w-full h-48 object-cover rounded"
+                />
+              )}
               <h3 className="text-lg font-semibold mt-2">{product.title}</h3>
               <p className="text-blue-400 font-bold">₹{product.price}</p>
-              <p className="text-sm text-gray-300">
-                {product.description}
-              </p>
+              <p className="text-sm text-gray-300">{product.description}</p>
               <p className="text-sm text-gray-300 mb-8">
                 Posted by: {product.email}
               </p>{" "}

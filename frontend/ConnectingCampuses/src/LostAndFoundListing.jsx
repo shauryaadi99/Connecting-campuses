@@ -5,6 +5,7 @@ import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { USER_API_ENDPOINT } from "../constants";
 import axios from "axios";
+import { getImageSrc } from "./SellBuyPage";
 
 // Sample data
 
@@ -38,15 +39,16 @@ const LostAndFoundListing = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
   const [items, setItems] = useState([]);
+  const [imageFile, setImageFile] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItem, setNewItem] = useState({
     title: "",
     description: "",
-    imageUrl: "",
+    photo: null, // ✅ new key
     contact: user?.email || "",
     whatsapp: "",
-    date: "", // <-- Added
+    date: "",
   });
 
   useEffect(() => {
@@ -75,29 +77,43 @@ const LostAndFoundListing = () => {
       !newItem.description ||
       !newItem.contact ||
       !newItem.whatsapp ||
-      !newItem.date // <-- now also checking for date
+      !newItem.date
     ) {
       alert("Please fill in all required fields.");
       return;
     }
 
     try {
+      const formData = new FormData();
+      formData.append("title", newItem.title);
+      formData.append("description", newItem.description);
+      formData.append("contact", newItem.contact);
+      formData.append("whatsapp", newItem.whatsapp);
+      formData.append("date", newItem.date);
+      formData.append("file", imageFile);
+
       const res = await axios.post(
         `${USER_API_ENDPOINT}/api/l-f-items/`,
-        newItem,
+        formData,
         {
-          withCredentials: true, // 👈 this sends cookies (like session or JWT)
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
-      setItems((prevItems) => [...prevItems, res.data]); // Add new item to local state
+
+      setItems((prevItems) => [...prevItems, res.data]);
       setIsModalOpen(false);
+      setImageFile(null);
+      fetchItems(); // Refresh listings
       setNewItem({
         title: "",
         description: "",
-        imageUrl: "",
+        photo: null,
         contact: user?.email || "",
         whatsapp: "",
-        date: "", // clear it
+        date: "",
       });
     } catch (error) {
       console.error("Failed to add item:", error);
@@ -105,17 +121,24 @@ const LostAndFoundListing = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
-        setItems(res.data); // Make sure your backend sends data in res.data
-        console.log("Fetched items:", res.data);
-      } catch (error) {
-        console.error("Failed to fetch items:", error);
-      }
-    };
+  const fetchItems = async () => {
+    try {
+      const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
 
+      // Add imageSrc to each item
+      const itemsWithImages = res.data.map((item) => ({
+        ...item,
+        imageSrc: getImageSrc(item.photo),
+      }));
+
+      setItems(itemsWithImages);
+      console.log("Fetched items:", itemsWithImages);
+    } catch (error) {
+      console.error("Failed to fetch items:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchItems();
   }, []);
 
@@ -253,12 +276,15 @@ const LostAndFoundListing = () => {
                     </button>
                   )}
 
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="object-cover w-full h-full absolute inset-0"
-                    loading="lazy"
-                  />
+                  {item.imageSrc?.trim() ? (
+                    <img
+                      src={item.imageSrc}
+                      alt={item.title}
+                      className="object-cover w-full h-full absolute inset-0"
+                      loading="lazy"
+                    />
+                  ) : null}
+
                   <div className="absolute inset-0 bg-black/70 text-white flex flex-col justify-between p-4 sm:p-6 opacity-100">
                     <div>
                       <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3 truncate">
@@ -370,16 +396,54 @@ const LostAndFoundListing = () => {
                 </LabelInputContainer>
 
                 <LabelInputContainer>
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input
-                    name="imageUrl"
-                    type="url"
-                    value={newItem.imageUrl}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full"
-                  />
-                </LabelInputContainer>
+                                <Label
+                                  htmlFor="photo"
+                                  className="text-sm font-semibold text-gray-300 mb-2 block"
+                                >
+                                  Upload Image*
+                                </Label>
+                
+                                <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    required
+                                    onChange={(e) => setImageFile(e.target.files[0])}
+                                    className="hidden"
+                                  />
+                                  <div className="flex flex-col items-center space-y-2">
+                                    <svg
+                                      className="w-8 h-8 text-blue-400"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M12 4v16m8-8H4"
+                                      />
+                                    </svg>
+                                    <span className="text-sm">
+                                      Click to upload or drag and drop
+                                    </span>
+                                  </div>
+                                </label>
+                
+                                {imageFile && (
+                                  <div className="mt-3">
+                                    <p className="text-xs text-gray-400 mb-1">
+                                      Selected image:
+                                    </p>
+                                    <img
+                                      src={URL.createObjectURL(imageFile)}
+                                      alt="Preview"
+                                      className="w-full h-48 object-cover rounded border border-gray-600"
+                                    />
+                                  </div>
+                                )}
+                              </LabelInputContainer>
 
                 <LabelInputContainer>
                   <Label htmlFor="contact">Contact Email*</Label>
