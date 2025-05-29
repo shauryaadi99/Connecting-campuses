@@ -33,7 +33,7 @@ const Newsroom = () => {
       card={{
         category: event.category || "General",
         title: event.title,
-        src: event.src || "",
+        photo: event.photo || "",
         // description: event.description,
         email: event.email,
         club: event.club,

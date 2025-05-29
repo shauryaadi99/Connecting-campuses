@@ -1,94 +1,186 @@
 import React, { useEffect, useState } from "react";
-import { Carousel, Card } from "./components/ui/apple-cards-carousel";
-import { useAuth } from "./context/AuthContext";
 import axios from "axios";
-import { USER_API_ENDPOINT } from "../constants";
 
-const UserNewsroomList = () => {
-  const [events, setEvents] = useState([]);
-  const [openCardIndex, setOpenCardIndex] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { user } = useAuth();
+const USER_API_ENDPOINT = "http://localhost:3000/api/college-events/";
+
+const NewsroomDashboard = () => {
+  const [newsroomEvents, setNewsroomEvents] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    category: "",
+    club: "",
+    title: "",
+    photo: null,
+    description: "",
+    date: "",
+  });
+
+  const fetchEvents = async () => {
+    try {
+      const res = await axios.get(USER_API_ENDPOINT);
+      setNewsroomEvents(res.data);
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+    }
+  };
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    fetchEvents();
   }, []);
 
-  useEffect(() => {
-    const fetchMyEvents = async () => {
-      try {
-        const res = await axios.get(
-          `${USER_API_ENDPOINT}/api/college-events/by-user/${user.email}`,
-          { withCredentials: true }
-        );
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-        const userEvents = res.data.map((event) => ({
-          ...event,
-          content: (
-            <div className="p-6 text-gray-700 dark:text-gray-200">
-              {event.description || "No description provided."}
-            </div>
-          ),
-        }));
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({ ...prev, photo: e.target.files[0] }));
+  };
 
-        setEvents(userEvents);
-      } catch (error) {
-        console.error("Failed to fetch user events:", error);
-      }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const form = new FormData();
+    Object.entries(formData).forEach(([key, val]) => {
+      if (val) form.append(key, val);
+    });
 
-    if (user?.email) {
-      fetchMyEvents();
+    try {
+      await axios.post(USER_API_ENDPOINT, form, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      setShowForm(false);
+      setFormData({
+        category: "",
+        club: "",
+        title: "",
+        photo: null,
+        description: "",
+        date: "",
+      });
+      fetchEvents(); // Refresh list
+    } catch (err) {
+      console.error("Upload failed:", err);
     }
-  }, [user]);
+  };
+  
+ const getImageSrc = (photo) => {
+  if (!photo?.data?.data || !photo?.contentType) return '';
 
+  const blob = new Blob([new Uint8Array(photo.data.data)], {
+    type: photo.contentType,
+  });
+
+  return URL.createObjectURL(blob); // fast & browser-native
+};
+
+  
   return (
-    <div className="pt-24 min-h-screen py-10 bg-gray-50 dark:bg-gray-900 w-full relative">
-      <h2 className="text-2xl md:text-4xl font-extrabold text-center text-neutral-900 dark:text-white mb-6">
-        My Listings ✨
-      </h2>
+    <div className="p-6 pt-40">
+      <h2 className="text-2xl font-bold mb-4">Newsroom Events</h2>
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="mb-4 px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        {showForm ? "Cancel" : "Add New Event"}
+      </button>
 
-      {events.length === 0 ? (
-        <div className="text-center text-gray-600 dark:text-gray-300 mt-10">
-          No events found for your account.
-        </div>
-      ) : isMobile ? (
-        <Carousel
-          items={events.map((card, i) => (
-            <Card
-              key={card._id || i}
-              card={card}
-              index={i}
-              isOpen={openCardIndex === i}
-              onOpen={() => setOpenCardIndex(i)}
-              onClose={() => setOpenCardIndex(null)}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="space-y-4 border p-4 mb-6">
+          <input
+            type="text"
+            name="category"
+            placeholder="Category"
+            value={formData.category}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
             />
-          ))}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4 md:px-8">
-          {events.map((card, index) => (
-            <div
-              key={index}
-              className={`transform scale-95 hover:scale-100 transition-transform duration-300 relative ${
-                openCardIndex === index ? "z-50" : "z-10"
-              } mb-8`}
+          <input
+            type="text"
+            name="club"
+            placeholder="Club"
+            value={formData.club}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+            />
+          <input
+            type="text"
+            name="title"
+            placeholder="Title"
+            value={formData.title}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+            />
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            />
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleInputChange}
+            className="border p-2 w-full"
+            required
+            />
+          <input
+            type="file"
+            name="photo"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="border p-2 w-full"
+            />
+          <button
+            type="submit"
+            className="bg-green-600 text-white px-4 py-2 rounded"
             >
-              <Card
-                card={card}
-                index={index}
-                isOpen={openCardIndex === index}
-                onOpen={() => setOpenCardIndex(index)}
-                onClose={() => setOpenCardIndex(null)}
-              />
-            </div>
-          ))}
-        </div>
+            Submit
+          </button>
+        </form>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {newsroomEvents.map((event) => {
+        console.log("Event photo structure:", event.photo);
+          const imgSrc = getImageSrc(event.photo);
+          return (
+            <div
+              key={event._id}
+              className="border p-4 rounded shadow-sm bg-white"
+            >
+              {imgSrc ? (
+                <img
+                  src={imgSrc}
+                  alt={event.title}
+                  className="w-full h-48 object-cover mb-3"
+                />
+              ) : (
+                <div className="w-full h-48 bg-gray-200 mb-3 flex items-center justify-center text-gray-500">
+                  No image
+                </div>
+              )}
+              <h3 className="text-xl font-semibold">{event.title}</h3>
+              <p className="text-gray-600">{event.description}</p>
+              <p className="text-sm text-gray-500">
+                {new Date(event.date).toLocaleDateString()} - {event.club}
+              </p>
+              <span className="text-xs bg-blue-100 px-2 py-1 rounded">
+                {event.category}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
 
-export default UserNewsroomList;
+export default NewsroomDashboard;

@@ -4,6 +4,7 @@ import axios from "axios";
 import { cn } from "../lib/utils";
 
 import { USER_API_ENDPOINT } from "../../constants";
+import { getImageSrc } from "../SellBuyPage";
 
 const WhatsappIcon = () => (
   <svg
@@ -47,12 +48,14 @@ const LostAndFoundCard = React.memo(({ item, index, hovered, setHovered }) => {
         hovered !== null && hovered !== index && "blur-sm scale-[0.98]"
       )}
     >
-      <img
-        src={item.imageUrl}
-        alt={item.title}
-        className="object-cover w-full h-full absolute inset-0"
-        loading="lazy"
-      />
+      {item.imageSrc?.trim() ? (
+        <img
+          src={item.imageSrc}
+          alt={item.title}
+          className="object-cover w-full h-full absolute inset-0"
+          loading="lazy"
+        />
+      ) : null}
 
       <div
         className={cn(
@@ -89,17 +92,24 @@ const LostAndFound = () => {
   const [hovered, setHovered] = useState(null);
   const [items, setItems] = useState([]);
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
-        setItems(res.data);
-        console.log("Fetched items:", res.data);
-      } catch (error) {
-        console.error("Failed to fetch items:", error);
-      }
-    };
+  const fetchItems = async () => {
+    try {
+      const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
 
+      // Add imageSrc to each item
+      const itemsWithImages = res.data.map((item) => ({
+        ...item,
+        imageSrc: getImageSrc(item.photo),
+      }));
+
+      setItems(itemsWithImages);
+      console.log("Fetched items:", itemsWithImages);
+    } catch (error) {
+      console.error("Failed to fetch items:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchItems();
   }, []);
 

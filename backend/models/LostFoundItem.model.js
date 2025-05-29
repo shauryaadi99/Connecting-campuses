@@ -10,10 +10,10 @@ const lostFoundItemSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  imageUrl: {
-    type: String,
-    default: "",
-  },
+  photo: {
+      data: Buffer,
+      contentType: String,
+    },
   contact: {
     type: String,
     required: true,

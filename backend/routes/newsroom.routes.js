@@ -8,6 +8,7 @@ import {
 } from '../controllers/newsroom.controller.js';
 
 import isAuthenticated from '../middlewares/isAuthenticated.js';
+import { singleUpload } from '../middlewares/multer.js';
 
 const router = express.Router();
 
@@ -15,8 +16,8 @@ const router = express.Router();
 router.get('/', getAllNewsroomEvents);
 
 // Protected routes (requires login)
-router.post('/', isAuthenticated, createNewsroomEvent);
-router.put('/:id', isAuthenticated, updateNewsroomEvent);
+router.post('/', isAuthenticated, singleUpload, createNewsroomEvent);
+router.put('/:id', isAuthenticated, singleUpload, updateNewsroomEvent);
 router.delete('/:id', isAuthenticated, deleteNewsroomEvent);
 
 // Get all listings by logged-in user's email (secured)

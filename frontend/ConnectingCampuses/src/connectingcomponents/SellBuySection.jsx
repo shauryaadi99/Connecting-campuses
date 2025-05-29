@@ -8,6 +8,7 @@ import "slick-carousel/slick/slick-theme.css";
 
 // Replace with your actual endpoint
 import { USER_API_ENDPOINT } from "../../constants";
+import { getImageSrc } from "../SellBuyPage";
 
 const SellBuySection = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -22,18 +23,27 @@ const SellBuySection = () => {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  const fetchListings = async () => {
+  try {
+    setLoading(true);
+    const res = await axios.get(`${USER_API_ENDPOINT}/api/sellbuys/listings`);
+
+    const listingsWithImages = res.data.map((item) => ({
+      ...item,
+      imageSrc: getImageSrc(item.photo),
+    }));
+
+    setMarketItems(listingsWithImages.slice(0, 7)); // ✅ use image-enabled listings
+  } catch (err) {
+    setError("Failed to load listings.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`${USER_API_ENDPOINT}/api/sellbuys/listings`);
-        setMarketItems(res.data.slice(0, 7)); // Slice first 7
-      } catch (err) {
-        setError("Failed to load listings.");
-      } finally {
-        setLoading(false);
-      }
-    };
 
     fetchListings();
   }, []);
@@ -50,9 +60,9 @@ const SellBuySection = () => {
   const renderCard = (item) => (
     <div key={item._id || item.id} className="px-4">
       <div className="bg-zinc-800 mb-0 rounded-lg p-6 flex flex-col items-center">
-        {item.imageUrl && (
+        {item.imageSrc && (
           <img
-            src={item.imageUrl}
+            src={item.imageSrc}
             alt={item.title}
             className="w-full h-48 object-cover rounded-md mb-0"
           />
@@ -93,7 +103,7 @@ const SellBuySection = () => {
                 </div>
               ),
               className: "col-span-1",
-              thumbnail: item.imageUrl,
+              thumbnail: item.imageSrc,
             }))}
           />
         )}

@@ -11,6 +11,7 @@ import {
   IconX,
   IconTrash,
 } from "@tabler/icons-react";
+import Linkify from "react-linkify";
 import { cn } from "../../lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useOutsideClick } from "../../hooks/use-outside-click";
@@ -18,6 +19,16 @@ import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import { USER_API_ENDPOINT } from "../../../constants";
 import { useLocation } from "react-router-dom"; // ✅ Add this at the top
+
+const getImageSrc = (photo) => {
+  if (!photo?.data?.data || !photo?.contentType) return "";
+
+  const blob = new Blob([new Uint8Array(photo.data.data)], {
+    type: photo.contentType,
+  });
+
+  return URL.createObjectURL(blob); // fast & browser-native
+};
 
 export const CarouselContext = createContext({
   onCardClose: () => {},
@@ -157,7 +168,7 @@ export const Card = ({
   const { user } = useAuth(); // fixed: no destructuring here
   const location = useLocation(); // ✅ Get current path
   const pathname = location.pathname;
-
+  const imageSrc = getImageSrc(card.photo);
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
   const { onCardClose, currentIndex } = useContext(CarouselContext);
@@ -229,55 +240,65 @@ export const Card = ({
     <>
       <AnimatePresence>
         {open && (
-          <div className="fixed inset-0 z-50 h-screen overflow-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg"
-            />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
               ref={containerRef}
-              layoutId={card.title ? `card-${card.title}` : undefined} // fixed undefined layout
-              className="relative z-[60] mx-auto my-10 h-fit max-w-5xl rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
+              layout
+              layoutId={card.title ? `card-${card.title}` : undefined}
+              className="relative z-[60] mx-auto w-full max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl bg-white p-6 font-sans md:p-10 dark:bg-neutral-900"
             >
+              {" "}
               <button
                 className="absolute top-4 right-4 z-[70] flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
                 onClick={handleClose}
               >
                 <IconX className="h-6 w-6 text-white dark:text-black" />
               </button>
-
               {/* User email */}
               <motion.p className="text-sm font-medium text-black dark:text-white">
                 {card?.email}
               </motion.p>
-
               {/* Title */}
               <motion.p
-                layoutId={card.title ? `title-${card.title}` : undefined} // fixed undefined layout
+                layoutId={card.title ? `title-${card.title}` : undefined}
                 className="mt-2 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
               >
                 {card.title}
               </motion.p>
-
               {/* Club name */}
               {card.club && (
                 <motion.p className="mt-1 text-lg font-medium text-neutral-600 dark:text-neutral-300">
                   {card.club}
                 </motion.p>
               )}
-
-              <div className="py-10 text-white">{card.content}</div>
+              <div className="py-10 text-white">
+                <Linkify
+                  componentDecorator={(href, text, key) => (
+                    <a
+                      href={href}
+                      key={key}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-blue-400 break-words"
+                    >
+                      {text}
+                    </a>
+                  )}
+                >
+                  {card.content}
+                </Linkify>
+              </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
       <motion.div
+        layout
         layoutId={card.title ? `card-${card.title}` : undefined}
         onClick={handleOpen}
         className="relative z-10 flex h-80 w-56 flex-col items-start justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
@@ -291,7 +312,7 @@ export const Card = ({
         }}
       >
         {/* Delete button - only show if user owns this card */}
-      {canShowTrash && (
+        {canShowTrash && (
           <button
             onClick={(e) => {
               e.stopPropagation(); // Prevent card click
@@ -340,7 +361,7 @@ export const Card = ({
           )}
         </div>
         <BlurImage
-          src={card.src}
+          src={imageSrc}
           alt={card.title}
           // Removed invalid fill="true" prop from img
           className="absolute inset-0 z-10 object-cover"

@@ -6,24 +6,27 @@ export const createListing = async (req, res) => {
       title,
       price,
       category,
-      imageUrl,
       description,
       whatsappNumber,
       email
     } = req.body;
 
-    // Optionally, associate user from auth middleware
-    // const userId = req.user.id;
+    // req.file is the uploaded file
+    const file = req.file;
 
     const newListing = new SellBuy({
       title,
       price,
       category,
-      imageUrl,
       description,
       whatsappNumber,
       email,
-      // userId,
+      photo: file
+        ? {
+            data: file.buffer,      // buffer of file data
+            contentType: file.mimetype,
+          }
+        : null,
     });
 
     const savedListing = await newListing.save();
@@ -39,7 +42,6 @@ export const createListing = async (req, res) => {
     });
   }
 };
-
 export const getAllListings = async (req, res) => {
   try {
     const listings = await SellBuy.find().sort({ createdAt: -1 });
