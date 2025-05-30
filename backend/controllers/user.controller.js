@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as crypto from "node:crypto";
 import nodemailer from "nodemailer";
+import sendEmail from "../config/sendEmail.js";
 
 // REGISTER
 export const registerUser = async (req, res) => {
@@ -80,7 +81,7 @@ export const registerUser = async (req, res) => {
       console.log("📨 Preparing to send verification email...");
 
       const mailOptions = {
-        from: `"BIT MESRA" <${process.env.EMAIL_USER}>`,
+        from: `"CONNECTING CAMPUSES" <${process.env.EMAIL_USER}>`,
         to: newUser.email,
         subject: "Verify Your Email",
         html: `<p>Hi ${newUser.name},</p>
@@ -337,7 +338,7 @@ export const resendVerificationEmail = async (req, res) => {
     user.tokenExpires = tokenExpires;
     await user.save();
 
-    const verifyURL = `http://localhost:5173/verify-email?token=${verificationToken}`;
+    const verifyURL = `${process.env.CLIENT_BASE_URL}/verify-email?token=${verificationToken}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -348,7 +349,7 @@ export const resendVerificationEmail = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"BIT MESRA" <${process.env.EMAIL_USER}>`,
+      from: `"CONNECTING CAMPUSES" <${process.env.EMAIL_USER}>`,
       to: user.email,
       subject: "Resend: Verify Your Email",
       html: `<p>Hi ${user.name},</p>
@@ -367,5 +368,59 @@ export const resendVerificationEmail = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+
+
+
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = tokenExpiry;
+    await user.save();
+
+    const resetURL = `${process.env.CLIENT_BASE_URL}/reset-password/${token}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset",
+      text: `Click the link to reset your password: ${resetURL}`,
+    });
+
+    res.status(200).json({ message: "Password reset link sent to your email" });
+  } catch (err) {
+    res.status(500).json({ message: "Error sending email", error: err.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }, // Not expired
+    });
+
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+
+    user.password = password; // Hashing should be handled in a pre-save hook
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
