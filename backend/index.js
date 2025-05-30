@@ -21,15 +21,6 @@ connectDB();
 // App setup
 const app = express();
 app.use(express.json());
-
-// Routes
-// app.use('/api/auth', authRoutes);
-// app.use('/api/newsroom', newsroomRoutes);
-// app.use('/api/carpool', carpoolRoutes);
-// app.use('/api/lostfound', lostAndFoundRoutes);
-// app.use('/api/sellbuy', sellAndBuyRoutes);
-// app.use('/api/attendance', attendanceRoutes);
-
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
