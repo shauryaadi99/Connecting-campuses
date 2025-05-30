@@ -97,7 +97,6 @@ export const registerUser = async (req, res) => {
 
       const result = await transporter.sendMail(mailOptions);
 
-
       console.log("✅ Verification email sent successfully.");
       console.log("📬 sendMail() result:", result);
     } catch (mailErr) {
@@ -183,8 +182,8 @@ export const loginUser = async (req, res) => {
       .status(200)
       .cookie("token", token, {
         httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
+        sameSite: "None", // ⛳ Allows cross-site cookies (required for Vercel <-> Render)
+        secure: true, // ⛳ Required for 'SameSite: None' to work properly
         maxAge: 24 * 60 * 60 * 1000,
       })
       .json({
@@ -371,9 +370,6 @@ export const resendVerificationEmail = async (req, res) => {
   }
 };
 
-
-
-
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
@@ -397,7 +393,9 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({ message: "Password reset link sent to your email" });
   } catch (err) {
-    res.status(500).json({ message: "Error sending email", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error sending email", error: err.message });
   }
 };
 
@@ -411,7 +409,8 @@ export const resetPassword = async (req, res) => {
       resetPasswordExpires: { $gt: Date.now() }, // Not expired
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user)
+      return res.status(400).json({ message: "Invalid or expired token" });
 
     user.password = password; // Hashing should be handled in a pre-save hook
     user.resetPasswordToken = undefined;
