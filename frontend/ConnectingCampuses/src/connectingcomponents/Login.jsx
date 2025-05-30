@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 // adjust path if needed
 
-const LoginForm = ({ onLoginSuccess }) => {
+const LoginForm = ({ onLoginSuccess, onClose }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -41,6 +41,11 @@ const LoginForm = ({ onLoginSuccess }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    if (onClose) onClose(); // Close login popup/modal
+    navigate("/forgot-password");
   };
 
   const handleSubmit = async (e) => {
@@ -90,7 +95,6 @@ const LoginForm = ({ onLoginSuccess }) => {
         return;
       }
       console.log("User from server:", user);
-
 
       // No token in localStorage, no need to set axios default headers here
       // Because the token is automatically sent in cookies with future requests (if withCredentials is set)
@@ -226,6 +230,16 @@ const LoginForm = ({ onLoginSuccess }) => {
                 Sign up here
               </button>
             </p>
+          </div>
+
+          <div className="mt-2 text-center">
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              className="text-blue-500 hover:underline text-sm"
+            >
+              Forgot your password?
+            </button>
           </div>
         </div>
       </div>

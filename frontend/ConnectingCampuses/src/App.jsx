@@ -17,6 +17,8 @@ import DeleteSubjectExample from "./DeleteSubjectExample";
 import ClearAttendanceButton from "./clearAllattendencefromdb";
 import NewsroomDashboard from "./UserNewsroomList";
 import VerifyEmailPage from "./verify-email";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 
 const App = () => {
   return (
@@ -37,6 +39,8 @@ const App = () => {
         <Route path="/deleteallAttendance" element={<ClearAttendanceButton />} />
         <Route path="/mynewsroomlistings" element={<NewsroomDashboard />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
 
       </Routes>

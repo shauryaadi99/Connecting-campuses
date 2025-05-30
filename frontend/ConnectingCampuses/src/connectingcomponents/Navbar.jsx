@@ -247,7 +247,10 @@ const Navbar = () => {
               >
                 &times;
               </button>
-              <LoginForm onLoginSuccess={handleLoginSuccess} />
+              <LoginForm
+                onLoginSuccess={() => setShowLogin(false)}
+                onClose={() => setShowLogin(false)} // close when needed
+              />{" "}
             </div>
           </div>
         </div>
