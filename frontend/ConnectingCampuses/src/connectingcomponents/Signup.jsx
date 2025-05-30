@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { cn } from "../lib/utils";
@@ -15,12 +15,40 @@ export function SignupFormDemo({ setShowSignup }) {
     password: "",
     graduatingYear: "",
   });
+  const [showResend, setShowResend] = useState(false);
 
   const [alert, setAlert] = useState({ message: "", type: "" });
+
+  useEffect(() => {
+    if (alert.type === "success") {
+      // Show resend button after 3 seconds delay
+      const timer = setTimeout(() => {
+        setShowResend(true);
+      }, 3000);
+
+      return () => clearTimeout(timer); // cleanup timer if component unmounts or alert changes
+    } else {
+      setShowResend(false);
+    }
+  }, [alert]);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value });
+  };
+
+  const resendVerification = async () => {
+    try {
+      await axios.post(`${USER_API_ENDPOINT}/api/user/resend-verification`, {
+        email: formData.email,
+      });
+
+      toast.success("📧 Verification email resent. Check your inbox.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to resend verification email."
+      );
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -28,38 +56,48 @@ export function SignupFormDemo({ setShowSignup }) {
     setAlert({ message: "", type: "" });
 
     try {
-      await axios.post(`${USER_API_ENDPOINT}/api/user/register`, formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await axios.post(
+        `${USER_API_ENDPOINT}/api/user/register`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("🚀 Submitting signup form with data:", formData);
 
       setAlert({
-        message: "🎉 Signed up successfully! Redirecting to login...",
+        message:
+          response.data.message ||
+          "🎉 Account created! Please verify your email.",
         type: "success",
       });
-      toast.success("🎉 Account created! You can now log in.");
 
-      // Wait 2s before switching
-      setTimeout(() => setShowSignup(false), 2000);
+      toast.success("✅ Please verify your email to activate your account.");
+      // Don't auto-switch to login
     } catch (error) {
-      setAlert({
-        message: error.response?.data?.message || "Signup failed",
-        type: "error",
-      });
+      const message = error.response?.data?.message || "Signup failed";
+      setAlert({ message, type: "error" });
+
+      // Optional: flag to show resend button
+      if (message.includes("already exists")) {
+        setShowResend(true);
+      }
     }
   };
 
   return (
     <>
-    <Toaster/>
+      <Toaster />
       <div className="max-h-[90vh] overflow-y-auto w-full">
-        <div className="shadow-input mx-auto w-full max-w-md rounded-lg bg-transparent md:p-6 dark:bg-black">
+        <div className="shadow-input mx-auto w-full max-w-md rounded-lg bg-transparent md:p-6 dark:bg-black custom-scrollbar">
           <h2 className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
             Welcome to Connecting Campuses
           </h2>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-            Signup using your BIT Mesra email to continue
+            Sign up using your BIT Mesra email. A verification link will be sent
+            to you.
           </p>
 
           {alert.message && (
@@ -72,6 +110,18 @@ export function SignupFormDemo({ setShowSignup }) {
               )}
             >
               {alert.message}
+            </div>
+          )}
+
+          {showResend && (
+            <div className="mt-2 text-sm">
+              <button
+                type="button"
+                onClick={resendVerification}
+                className="text-blue-600 hover:underline"
+              >
+                Didn’t get the email? Resend verification link
+              </button>
             </div>
           )}
 

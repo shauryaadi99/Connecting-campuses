@@ -16,6 +16,7 @@ import UpdateProfileForm from "./UpdateProfileForm";
 import DeleteSubjectExample from "./DeleteSubjectExample";
 import ClearAttendanceButton from "./clearAllattendencefromdb";
 import NewsroomDashboard from "./UserNewsroomList";
+import VerifyEmailPage from "./verify-email";
 
 const App = () => {
   return (
@@ -35,6 +36,8 @@ const App = () => {
         <Route path="/update-profile" element={<UpdateProfileForm />} />
         <Route path="/deleteallAttendance" element={<ClearAttendanceButton />} />
         <Route path="/mynewsroomlistings" element={<NewsroomDashboard />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+
 
       </Routes>
       <Footer />

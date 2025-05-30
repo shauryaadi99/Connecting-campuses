@@ -27,6 +27,22 @@ const LoginForm = ({ onLoginSuccess }) => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
+  const resendVerification = async () => {
+    try {
+      setLoading(true);
+      await axios.post(`${USER_API_ENDPOINT}/api/user/resend-verification`, {
+        email: formData.email,
+      });
+      toast.success("Verification email resent. Please check your inbox.");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to resend verification email."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -67,6 +83,15 @@ const LoginForm = ({ onLoginSuccess }) => {
 
       console.log("User stored:", localStorage.getItem("user"));
 
+      if (!user.isVerified) {
+        setErrorMsg("Please verify your email before logging in.");
+        toast.error("Please verify your email to activate your account.");
+        setLoading(false);
+        return;
+      }
+      console.log("User from server:", user);
+
+
       // No token in localStorage, no need to set axios default headers here
       // Because the token is automatically sent in cookies with future requests (if withCredentials is set)
 
@@ -74,14 +99,14 @@ const LoginForm = ({ onLoginSuccess }) => {
 
       const username = user?.name || user?.email || "User";
       setAlert({
-  message: `Welcome back, ${username}! Redirecting to home...`,
-  type: "success",
-});
-toast.success(`Welcome back, ${username}!`);
+        message: `Welcome back, ${username}! Redirecting to home...`,
+        type: "success",
+      });
+      toast.success(`Welcome back, ${username}!`);
 
-setTimeout(() => {
-window.location.href = "/profile";}, 100);
-
+      setTimeout(() => {
+        window.location.href = "/profile";
+      }, 100);
 
       if (onLoginSuccess) onLoginSuccess();
     } catch (error) {
@@ -143,6 +168,18 @@ window.location.href = "/profile";}, 100);
             {errorMsg && (
               <div className="text-sm text-red-500 font-medium">{errorMsg}</div>
             )}
+
+            {!loading &&
+              errorMsg === "Please verify your email before logging in." && (
+                <div className="mt-2 text-sm">
+                  <button
+                    onClick={resendVerification}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Didn’t get the email? Resend verification link
+                  </button>
+                </div>
+              )}
 
             <LabelInputContainer>
               <Label htmlFor="email">Email Address</Label>
