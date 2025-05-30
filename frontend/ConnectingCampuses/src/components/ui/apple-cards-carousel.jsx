@@ -169,36 +169,48 @@ export const Card = ({
   const location = useLocation(); // ✅ Get current path
   const pathname = location.pathname;
   const imageSrc = getImageSrc(card.photo);
+  const isListingView = pathname === "/newsroom"; // or whatever the route is
+
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
   const { onCardClose, currentIndex } = useContext(CarouselContext);
 
+  function onKeyDown(event) {
+    if (event.key === "Escape") {
+      handleClose();
+    }
+  }
   useEffect(() => {
-    function onKeyDown(event) {
-      if (event.key === "Escape") {
-        handleClose();
-      }
-    }
+    const shouldBeOpen = isListingView ? isOpen : open;
 
-    if (open) {
+    if (shouldBeOpen) {
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
+      window.addEventListener("keydown", onKeyDown);
     }
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+    return () => {
+      document.body.style.overflow = "auto";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, isOpen, isListingView]);
 
   useOutsideClick(containerRef, () => handleClose());
 
   const handleOpen = () => {
-    setOpen(true);
+    if (isListingView) {
+      onOpen?.(); // inform parent to open
+    } else {
+      setOpen(true);
+    }
   };
 
   const handleClose = () => {
-    setOpen(false);
-    onCardClose(index);
+    if (isListingView) {
+      onClose?.(); // inform parent to close
+    } else {
+      setOpen(false);
+      onCardClose(index); // only in carousel
+    }
   };
 
   // Delete button handler
@@ -239,7 +251,7 @@ export const Card = ({
   return (
     <>
       <AnimatePresence>
-        {open && (
+        {(isListingView ? isOpen : open) && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}

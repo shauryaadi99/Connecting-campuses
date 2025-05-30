@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import Linkify from 'react-linkify';
+import Linkify from "react-linkify";
 import { Carousel, Card } from "./components/ui/apple-cards-carousel";
 import { Label } from "./components/ui/label";
 import { Input } from "./components/ui/input";
@@ -38,7 +38,6 @@ const DummyContent = ({ description, photo }) => {
         >
           {description}
         </Linkify>
-        
       </p>
     </div>
   );
@@ -50,6 +49,8 @@ const sortOrders = ["Newest First", "Oldest First"];
 const NewsroomListing = () => {
   const [events, setEvents] = useState([]);
   const [openCardIndex, setOpenCardIndex] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedClub, setSelectedClub] = useState("All");
   const [sortOrder, setSortOrder] = useState("Newest First");
@@ -360,11 +361,11 @@ const NewsroomListing = () => {
                   <Card
                     card={card}
                     index={index}
-                    isOpen={openCardIndex === index}
-                    onOpen={() => setOpenCardIndex(index)}
-                    onClose={() => setOpenCardIndex(null)}
+                    isOpen={false}
+                    onOpen={() => setSelectedEvent(card)}
                     showDelete={card.email === user?.email}
                     onDelete={() => handleDeleteEvent(card._id)}
+                    isListing={!isMobile}
                   />
                 </div>
               ))}
@@ -541,6 +542,61 @@ const NewsroomListing = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 transition-all duration-300 px-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div
+            className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow-2xl rounded-xl p-6 sm:p-8 w-full max-w-xl max-h-[90vh] overflow-y-auto relative custom-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-red-500"
+              onClick={() => setSelectedEvent(null)}
+            >
+              ✕
+            </button>
+
+            {/* Title */}
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              {selectedEvent.title}
+            </h3>
+
+            {/* Club */}
+            {selectedEvent.club && (
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <strong>Club:</strong> {selectedEvent.club}
+              </p>
+            )}
+
+            {/* Email */}
+            {selectedEvent.email && (
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                <strong>Posted by:</strong> {selectedEvent.email}
+              </p>
+            )}
+
+            {/* Date */}
+            {selectedEvent.date && (
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <strong>Date:</strong>{" "}
+                {new Date(selectedEvent.date).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            )}
+
+            {/* Description / Content */}
+            <div className="text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+              {selectedEvent.content}
+            </div>
           </div>
         </div>
       )}
