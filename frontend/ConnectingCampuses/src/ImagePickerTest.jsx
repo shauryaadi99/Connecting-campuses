@@ -1,12 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 
 const ImagePickerTest = () => {
-  const inputRef = useRef(null);
   const [preview, setPreview] = useState(null);
-
-  const handleButtonClick = () => {
-    inputRef.current?.click();
-  };
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -17,17 +12,14 @@ const ImagePickerTest = () => {
 
     console.log("File picked:", file);
 
-    // Create a URL for preview
     const previewURL = URL.createObjectURL(file);
     setPreview(previewURL);
 
-    // Read the file as Base64 to store in localStorage
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64data = reader.result;
       console.log("Base64 string:", base64data);
 
-      // Save to localStorage (limit ~5MB total)
       try {
         localStorage.setItem("pickedImage", base64data);
         console.log("Image saved to localStorage");
@@ -35,57 +27,37 @@ const ImagePickerTest = () => {
         console.error("Failed to save image to localStorage", error);
       }
     };
+
     reader.readAsDataURL(file);
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 400,
-        margin: "2rem auto",
-        padding: "1rem",
-        border: "2px solid #333",
-        borderRadius: 8,
-        textAlign: "center",
-        fontFamily: "Arial, sans-serif",
-      }}
-      className="max-w-md mx-auto h-screen flex flex-col justify-center items-center p-4 border-2 border-gray-800 rounded-lg text-center font-sans bg-gray-700"
-    >
-      <h2>Mobile Image Picker Test</h2>
+    <div className="max-w-md mx-auto h-screen flex flex-col justify-center items-center p-6 bg-gray-800 rounded-lg shadow-lg text-white font-sans">
+      <h2 className="text-2xl font-bold mb-4 text-center">Image Picker Test</h2>
+
       <input
-        ref={inputRef}
+        id="image-input"
         type="file"
         accept="image/*"
-        capture="environment"
-        style={{ display: "none" }}
+        className="hidden"
         onChange={handleFileChange}
       />
-      <button
-        onClick={handleButtonClick}
-        style={{
-          padding: "12px 24px",
-          backgroundColor: "#007bff",
-          color: "white",
-          border: "none",
-          borderRadius: 6,
-          fontSize: 16,
-          cursor: "pointer",
-          marginBottom: "1rem",
-        }}
+
+      <label
+        htmlFor="image-input"
+        className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200 text-white py-2 px-6 rounded cursor-pointer mb-6"
       >
         Pick Image from Device
-      </button>
+      </label>
+
       {preview && (
-        <div>
-          <p>Preview:</p>
+        <div className="w-full text-center">
+          <p className="mb-2">Preview:</p>
           <img
             src={preview}
             alt="Picked"
-            style={{ maxWidth: "100%", borderRadius: 8 }}
-            onLoad={() => {
-              // Free memory after image loads
-              URL.revokeObjectURL(preview);
-            }}
+            className="max-w-full rounded"
+            onLoad={() => URL.revokeObjectURL(preview)}
           />
         </div>
       )}
