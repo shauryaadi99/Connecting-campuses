@@ -238,7 +238,7 @@ const SellBuyPage = () => {
                 />
               </LabelInputContainer>
 
-             <LabelInputContainer>
+            <LabelInputContainer>
   <Label
     htmlFor="photo"
     className="text-sm font-semibold text-gray-300 mb-2 block"
@@ -247,15 +247,18 @@ const SellBuyPage = () => {
   </Label>
 
   <div className="relative w-full">
+    {/* File input must be visually hidden but still present */}
     <input
       id="photo"
       type="file"
       accept="image/*"
       required
       onChange={(e) => setImageFile(e.target.files[0])}
-      className="absolute inset-0 opacity-0 w-full h-full z-10 cursor-pointer"
+      className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
     />
-    <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer z-0">
+
+    {/* Styled "button" behind the transparent input */}
+    <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition pointer-events-none">
       <div className="flex flex-col items-center space-y-2">
         <svg
           className="w-8 h-8 text-blue-400"
@@ -270,7 +273,9 @@ const SellBuyPage = () => {
             d="M12 4v16m8-8H4"
           />
         </svg>
-        <span className="text-sm">Tap to upload or drag and drop</span>
+        <span className="text-sm text-center">
+          Tap to upload or drag and drop
+        </span>
       </div>
     </div>
   </div>
@@ -286,6 +291,7 @@ const SellBuyPage = () => {
     </div>
   )}
 </LabelInputContainer>
+
 
 
               <LabelInputContainer>
