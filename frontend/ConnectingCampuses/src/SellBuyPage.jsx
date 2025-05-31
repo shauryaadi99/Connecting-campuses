@@ -248,14 +248,18 @@ const SellBuyPage = () => {
 
   <div className="relative w-full">
     {/* File input must be visually hidden but still present */}
-    <input
-      id="photo"
-      type="file"
-      accept="image/*"
-      required
-      onChange={(e) => setImageFile(e.target.files[0])}
-      className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer"
-    />
+     <input
+                    id="photo"
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      console.log("Picked file:", file);
+                      setImageFile(file);
+                    }}
+                    className="absolute inset-0 opacity-0 w-full h-full z-20 cursor-pointer"
+                  />
 
     {/* Styled "button" behind the transparent input */}
     <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition pointer-events-none">
