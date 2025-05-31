@@ -1,89 +1,94 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 
 const ImagePickerTest = () => {
-  const [imageBlobUrl, setImageBlobUrl] = useState(null);
-  const [fileName, setFileName] = useState("");
+  const inputRef = useRef(null);
+  const [preview, setPreview] = useState(null);
 
-  // Load image from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("test-image-blob");
-    if (stored) {
-      const byteArray = Uint8Array.from(atob(stored), (c) => c.charCodeAt(0));
-      const blob = new Blob([byteArray], { type: "image/jpeg" });
-      const url = URL.createObjectURL(blob);
-      setImageBlobUrl(url);
-      console.log("✅ Loaded image blob from localStorage.");
-    }
-  }, []);
+  const handleButtonClick = () => {
+    inputRef.current?.click();
+  };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) {
-      console.warn("⚠️ No file selected");
+      console.log("No file selected");
       return;
     }
 
-    console.log("📂 File selected:", file.name);
-    setFileName(file.name);
+    console.log("File picked:", file);
 
+    // Create a URL for preview
+    const previewURL = URL.createObjectURL(file);
+    setPreview(previewURL);
+
+    // Read the file as Base64 to store in localStorage
     const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      const byteString = result.split(",")[1];
-      localStorage.setItem("test-image-blob", byteString);
-      console.log("💾 Image stored in localStorage as base64 blob.");
-      const blob = new Blob([Uint8Array.from(atob(byteString), (c) => c.charCodeAt(0))], {
-        type: file.type,
-      });
-      const url = URL.createObjectURL(blob);
-      setImageBlobUrl(url);
-    };
-    reader.onerror = (err) => {
-      console.error("❌ Error reading file:", err);
-    };
+    reader.onloadend = () => {
+      const base64data = reader.result;
+      console.log("Base64 string:", base64data);
 
+      // Save to localStorage (limit ~5MB total)
+      try {
+        localStorage.setItem("pickedImage", base64data);
+        console.log("Image saved to localStorage");
+      } catch (error) {
+        console.error("Failed to save image to localStorage", error);
+      }
+    };
     reader.readAsDataURL(file);
   };
 
-  const clearImage = () => {
-    localStorage.removeItem("test-image-blob");
-    setImageBlobUrl(null);
-    setFileName("");
-    console.log("🧹 Cleared image from localStorage.");
-  };
-
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 py-10 space-y-6">
-      <h1 className="text-2xl font-bold text-cyan-400">🧪 Image Picker Tester</h1>
+    <div
+      style={{
+        maxWidth: 400,
+        margin: "2rem auto",
+        padding: "1rem",
+        border: "2px solid #333",
+        borderRadius: 8,
+        textAlign: "center",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h2>Mobile Image Picker Test</h2>
 
-      <label className="w-full max-w-sm">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <div className="cursor-pointer bg-gray-800 border-2 border-dashed border-gray-600 p-6 rounded-lg text-center hover:bg-gray-700 transition">
-          <p className="text-sm text-gray-300">Tap to upload or take a photo</p>
-          <p className="text-xs text-gray-500 mt-1">(image/* only)</p>
-        </div>
-      </label>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
 
-      {fileName && <p className="text-sm text-green-400">📁 Selected file: {fileName}</p>}
+      <button
+        onClick={handleButtonClick}
+        style={{
+          padding: "12px 24px",
+          backgroundColor: "#007bff",
+          color: "white",
+          border: "none",
+          borderRadius: 6,
+          fontSize: 16,
+          cursor: "pointer",
+          marginBottom: "1rem",
+        }}
+      >
+        Pick Image from Device
+      </button>
 
-      {imageBlobUrl && (
-        <div className="w-full max-w-sm">
+      {preview && (
+        <div>
+          <p>Preview:</p>
           <img
-            src={imageBlobUrl}
-            alt="Selected Preview"
-            className="w-full h-auto rounded border border-gray-700"
+            src={preview}
+            alt="Picked"
+            style={{ maxWidth: "100%", borderRadius: 8 }}
+            onLoad={() => {
+              // Free memory after image loads
+              URL.revokeObjectURL(preview);
+            }}
           />
-          <button
-            onClick={clearImage}
-            className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white text-sm"
-          >
-            Clear Image
-          </button>
         </div>
       )}
     </div>
