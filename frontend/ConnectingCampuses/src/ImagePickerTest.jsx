@@ -3,7 +3,7 @@ import React, { useState } from "react";
 const ImagePickerTest = () => {
   const [preview, setPreview] = useState(null);
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) {
       console.log("No file selected");
@@ -47,7 +47,7 @@ const ImagePickerTest = () => {
         htmlFor="image-input"
         className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200 text-white py-2 px-6 rounded cursor-pointer mb-6"
       >
-        Pick Image from Device
+        Choose from Gallery or Camera
       </label>
 
       {preview && (
