@@ -239,50 +239,33 @@ const SellBuyPage = () => {
               </LabelInputContainer>
 
             <LabelInputContainer>
-  <Label
-    htmlFor="photo"
-    className="text-sm font-semibold text-gray-300 mb-2 block"
-  >
+  <Label htmlFor="photo" className="text-sm font-semibold text-gray-300 mb-2 block">
     Upload Image*
   </Label>
 
-  <div className="relative w-full">
-    {/* File input must be visually hidden but still present */}
-     <input
-                    id="photo"
-                    type="file"
-                    accept="image/*"
-                    required
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      console.log("Picked file:", file);
-                      setImageFile(file);
-                    }}
-                    className="absolute inset-0 opacity-0 w-full h-full z-20 cursor-pointer"
-                  />
-
-    {/* Styled "button" behind the transparent input */}
-    <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition pointer-events-none">
+  <label htmlFor="photo" className="w-full cursor-pointer">
+    <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition">
       <div className="flex flex-col items-center space-y-2">
-        <svg
-          className="w-8 h-8 text-blue-400"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 4v16m8-8H4"
-          />
+        <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span className="text-sm text-center">
-          Tap to upload or drag and drop
-        </span>
+        <span className="text-sm">Tap to upload or drag and drop</span>
       </div>
     </div>
-  </div>
+  </label>
+
+  <input
+    id="photo"
+    type="file"
+    accept="image/*"
+    required
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      console.log("Picked file:", file);
+      setImageFile(file);
+    }}
+    className="hidden"
+  />
 
   {imageFile && (
     <div className="mt-3">
@@ -295,6 +278,7 @@ const SellBuyPage = () => {
     </div>
   )}
 </LabelInputContainer>
+
 
 
 
