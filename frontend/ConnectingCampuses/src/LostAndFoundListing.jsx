@@ -396,54 +396,54 @@ const LostAndFoundListing = () => {
                 </LabelInputContainer>
 
                 <LabelInputContainer>
-                                <Label
-                                  htmlFor="photo"
-                                  className="text-sm font-semibold text-gray-300 mb-2 block"
-                                >
-                                  Upload Image*
-                                </Label>
-                
-                                <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    required
-                                    onChange={(e) => setImageFile(e.target.files[0])}
-                                    className="hidden"
-                                  />
-                                  <div className="flex flex-col items-center space-y-2">
-                                    <svg
-                                      className="w-8 h-8 text-blue-400"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 4v16m8-8H4"
-                                      />
-                                    </svg>
-                                    <span className="text-sm">
-                                      Click to upload or drag and drop
-                                    </span>
-                                  </div>
-                                </label>
-                
-                                {imageFile && (
-                                  <div className="mt-3">
-                                    <p className="text-xs text-gray-400 mb-1">
-                                      Selected image:
-                                    </p>
-                                    <img
-                                      src={URL.createObjectURL(imageFile)}
-                                      alt="Preview"
-                                      className="w-full h-48 object-cover rounded border border-gray-600"
-                                    />
-                                  </div>
-                                )}
-                              </LabelInputContainer>
+                  <Label
+                    htmlFor="photo"
+                    className="text-sm font-semibold text-gray-300 mb-2 block"
+                  >
+                    Upload Image*
+                  </Label>
+
+                  <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      required
+                      onChange={(e) => setImageFile(e.target.files[0])}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center space-y-2">
+                      <svg
+                        className="w-8 h-8 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      <span className="text-sm">
+                        Click to upload or drag and drop
+                      </span>
+                    </div>
+                  </label>
+
+                  {imageFile && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-400 mb-1">
+                        Selected image:
+                      </p>
+                      <img
+                        src={URL.createObjectURL(imageFile)}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded border border-gray-600"
+                      />
+                    </div>
+                  )}
+                </LabelInputContainer>
 
                 <LabelInputContainer>
                   <Label htmlFor="contact">Contact Email*</Label>
@@ -478,7 +478,9 @@ const LostAndFoundListing = () => {
                     value={newItem.whatsapp}
                     onChange={handleInputChange}
                     required
-                    placeholder="+1234567890"
+                    placeholder="9876543210"
+                    pattern="[6-9]{1}[0-9]{9}"
+                    maxLength={10}
                     className="w-full"
                   />
                 </LabelInputContainer>
