@@ -49,9 +49,9 @@ const ImagePickerTest = () => {
         textAlign: "center",
         fontFamily: "Arial, sans-serif",
       }}
+      className="max-w-md mx-auto h-screen flex flex-col justify-center items-center p-4 border-2 border-gray-800 rounded-lg text-center font-sans bg-gray-700"
     >
       <h2>Mobile Image Picker Test</h2>
-
       <input
         ref={inputRef}
         type="file"
@@ -60,7 +60,6 @@ const ImagePickerTest = () => {
         style={{ display: "none" }}
         onChange={handleFileChange}
       />
-
       <button
         onClick={handleButtonClick}
         style={{
@@ -76,7 +75,6 @@ const ImagePickerTest = () => {
       >
         Pick Image from Device
       </button>
-
       {preview && (
         <div>
           <p>Preview:</p>
