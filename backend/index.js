@@ -25,14 +25,17 @@ const allowedOrigins = [
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow requests with no origin (like curl, Postman, or file uploads)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn("CORS rejected for origin:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
 };
+
 // App setup
 const app = express();
 app.use(cors(corsOptions));
