@@ -5,10 +5,7 @@ const ImagePickerTest = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    if (!file) {
-      console.log("No file selected");
-      return;
-    }
+    if (!file) return console.log("No file selected");
 
     console.log("File picked:", file);
 
@@ -18,47 +15,27 @@ const ImagePickerTest = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64data = reader.result;
-      console.log("Base64 string:", base64data);
-
-      try {
-        localStorage.setItem("pickedImage", base64data);
-        console.log("Image saved to localStorage");
-      } catch (error) {
-        console.error("Failed to save image to localStorage", error);
-      }
+      localStorage.setItem("pickedImage", base64data);
+      console.log("Image saved to localStorage");
     };
-
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className="max-w-md mx-auto h-screen flex flex-col justify-center items-center p-6 bg-gray-800 rounded-lg shadow-lg text-white font-sans">
-      <h2 className="text-2xl font-bold mb-4 text-center">Image Picker Test</h2>
+    <div className="p-6 bg-gray-900 text-white h-screen flex flex-col items-center justify-center space-y-6">
+      <h1 className="text-2xl font-bold">Image Picker Test</h1>
 
       <input
-        id="image-input"
         type="file"
         accept="image/*"
-        className="hidden"
         onChange={handleFileChange}
+        className="text-white bg-gray-800 p-2 rounded"
       />
 
-      <label
-        htmlFor="image-input"
-        className="bg-blue-500 hover:bg-blue-600 transition-colors duration-200 text-white py-2 px-6 rounded cursor-pointer mb-6"
-      >
-        Choose from Gallery or Camera
-      </label>
-
       {preview && (
-        <div className="w-full text-center">
-          <p className="mb-2">Preview:</p>
-          <img
-            src={preview}
-            alt="Picked"
-            className="max-w-full rounded"
-            onLoad={() => URL.revokeObjectURL(preview)}
-          />
+        <div>
+          <p className="mb-2 text-center">Preview:</p>
+          <img src={preview} alt="Picked" className="max-w-xs rounded" />
         </div>
       )}
     </div>
