@@ -168,17 +168,19 @@ const Navbar = () => {
             </a>
 
             {/* Desktop Nav */}
-            <div className="hidden sm:flex items-center space-x-5 md:space-x-8 whitespace-nowrap">
-              {navLinks.map(({ href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  onClick={(e) => handleNavClick(e, href)}
-                  className="text-base md:text-lg font-semibold text-gray-800 hover:text-orange-500 transition hover:scale-105"
-                >
-                  {label}
-                </a>
-              ))}
+            <div className="hidden sm:flex items-center space-x-5 md:space-x-8">
+              <div className="flex items-center space-x-5 whitespace-nowrap">
+                {navLinks.map(({ href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    onClick={(e) => handleNavClick(e, href)}
+                    className="text-base md:text-lg font-semibold text-gray-800 hover:text-orange-500 transition hover:scale-105"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
               {LoginOrProfileButton}
             </div>
 
