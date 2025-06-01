@@ -55,9 +55,9 @@ const Newsroom = () => {
           </h2>
         </div>
 
-        <div className="w-full flex justify-center items-center min-h-[300px]">
+        <div className="w-full flex flex-col justify-between items-center min-h-[500px] px-4 sm:px-6 lg:px-8">
           {loading ? (
-            <div className="flex flex-col justify-center items-center gap-4 h-full py-10">
+            <div className="flex flex-col justify-center items-center flex-grow py-10">
               <div className="relative w-16 h-16">
                 <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin" />
                 <div className="absolute inset-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 blur-sm opacity-30 animate-pulse" />
@@ -68,9 +68,11 @@ const Newsroom = () => {
             </div>
           ) : (
             <>
-              <Carousel items={cards} />
+              <div className="w-full">
+                <Carousel items={cards} />
+              </div>
 
-              <div className="flex justify-center mt-0">
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={() => (window.location.href = "/newsroom")}
