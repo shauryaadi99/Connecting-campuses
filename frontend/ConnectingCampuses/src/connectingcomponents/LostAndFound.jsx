@@ -85,27 +85,26 @@ const LostAndFoundCard = React.memo(({ item, index, hovered, setHovered }) => {
     </div>
   );
 });
-
 LostAndFoundCard.displayName = "LostAndFoundCard";
 
 const LostAndFound = () => {
   const [hovered, setHovered] = useState(null);
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true); // 🌀 Loader state
 
   const fetchItems = async () => {
     try {
       const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
-
-      // Add imageSrc to each item
       const itemsWithImages = res.data.map((item) => ({
         ...item,
         imageSrc: getImageSrc(item.photo),
       }));
 
       setItems(itemsWithImages);
-      console.log("Fetched items:", itemsWithImages);
     } catch (error) {
       console.error("Failed to fetch items:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,26 +123,41 @@ const LostAndFound = () => {
         Lost &amp; Found
       </h2>
 
-      <div className="w-full max-w-full grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto px-4 md:px-0">
-        {previewItems.map((item, index) => (
-          <LostAndFoundCard
-            key={item._id || item.title + index}
-            item={item}
-            index={index}
-            hovered={hovered}
-            setHovered={setHovered}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="w-full flex justify-center items-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 border-[6px] border-orange-400 border-t-transparent rounded-full animate-spin relative">
+              <div className="absolute inset-1 rounded-full bg-orange-300 opacity-20 blur-sm animate-pulse" />
+            </div>
+            <p className="text-lg font-semibold text-orange-600 animate-pulse">
+              Finding your items...
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="w-full max-w-full grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto px-4 md:px-0">
+            {previewItems.map((item, index) => (
+              <LostAndFoundCard
+                key={item._id || item.title + index}
+                item={item}
+                index={index}
+                hovered={hovered}
+                setHovered={setHovered}
+              />
+            ))}
+          </div>
 
-      <div className="mt-14 text-center max-w-5xl mx-auto">
-        <Link
-          to="/lostfound"
-          className="text-orange-700 hover:text-orange-900 font-bold text-xl transition-colors duration-300 underline-offset-4 hover:underline"
-        >
-          See All Lost &amp; Found Items &rarr;
-        </Link>
-      </div>
+          <div className="mt-14 text-center max-w-5xl mx-auto">
+            <Link
+              to="/lostfound"
+              className="text-orange-700 hover:text-orange-900 font-bold text-xl transition-colors duration-300 underline-offset-4 hover:underline"
+            >
+              See All Lost &amp; Found Items &rarr;
+            </Link>
+          </div>
+        </>
+      )}
     </section>
   );
 };
