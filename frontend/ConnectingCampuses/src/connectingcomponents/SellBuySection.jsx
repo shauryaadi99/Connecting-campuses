@@ -24,27 +24,24 @@ const SellBuySection = () => {
   }, []);
 
   const fetchListings = async () => {
-  try {
-    setLoading(true);
-    const res = await axios.get(`${USER_API_ENDPOINT}/api/sellbuys/listings`);
+    try {
+      setLoading(true);
+      const res = await axios.get(`${USER_API_ENDPOINT}/api/sellbuys/listings`);
 
-    const listingsWithImages = res.data.map((item) => ({
-      ...item,
-      imageSrc: getImageSrc(item.photo),
-    }));
+      const listingsWithImages = res.data.map((item) => ({
+        ...item,
+        imageSrc: getImageSrc(item.photo),
+      }));
 
-    setMarketItems(listingsWithImages.slice(0, 7)); // ✅ use image-enabled listings
-  } catch (err) {
-    setError("Failed to load listings.");
-  } finally {
-    setLoading(false);
-  }
-};
+      setMarketItems(listingsWithImages.slice(0, 7)); // ✅ use image-enabled listings
+    } catch (err) {
+      setError("Failed to load listings.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-  
   useEffect(() => {
-
     fetchListings();
   }, []);
 
@@ -68,8 +65,12 @@ const SellBuySection = () => {
           />
         )}
         <div>
-          <p className="font-bold md:text-4xl text-xl text-white">{item.title}</p>
-          <p className="font-normal text-base my-4 max-w-lg text-neutral-200">{item.description}</p>
+          <p className="font-bold md:text-4xl text-xl text-white">
+            {item.title}
+          </p>
+          <p className="font-normal text-base my-4 max-w-lg text-neutral-200">
+            {item.description}
+          </p>
           <p className="text-white font-semibold">Price: ₹{item.price}</p>
           <p className="text-neutral-300 text-sm">Seller: {item.email}</p>
         </div>
@@ -78,14 +79,26 @@ const SellBuySection = () => {
   );
 
   return (
-    <div id="sellbuy" className="h-screen py-7 w-full bg-gray-900 flex flex-col">
+    <div
+      id="sellbuy"
+      className="h-screen py-7 w-full bg-gray-900 flex flex-col"
+    >
       <h2 className="text-4xl font-extrabold text-white text-center mb-8">
         College Buy Bonanza 🎉
       </h2>
 
       <div className="flex-grow mb-0">
         {loading ? (
-          <p className="text-white text-center">Loading...</p>
+          <div className="flex justify-center items-center h-full w-full py-10">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-16 h-16 border-[5px] border-cyan-400 border-t-transparent rounded-full animate-spin relative">
+                <div className="absolute inset-1 rounded-full bg-cyan-400 opacity-20 blur-sm animate-pulse" />
+              </div>
+              <p className="text-cyan-300 font-medium text-lg animate-pulse tracking-wide">
+                Fetching your marketplace…
+              </p>
+            </div>
+          </div>
         ) : error ? (
           <p className="text-red-500 text-center">{error}</p>
         ) : isMobile ? (
@@ -96,10 +109,18 @@ const SellBuySection = () => {
               id: item._id || item.id,
               content: (
                 <div>
-                  <p className="font-bold md:text-4xl text-xl text-white">{item.title}</p>
-                  <p className="font-normal text-base my-4 max-w-lg text-neutral-200">{item.description}</p>
-                  <p className="text-white font-semibold">Price: ₹{item.price}</p>
-                  <p className="text-neutral-300 text-sm">Seller: {item.email}</p>
+                  <p className="font-bold md:text-4xl text-xl text-white">
+                    {item.title}
+                  </p>
+                  <p className="font-normal text-base my-4 max-w-lg text-neutral-200">
+                    {item.description}
+                  </p>
+                  <p className="text-white font-semibold">
+                    Price: ₹{item.price}
+                  </p>
+                  <p className="text-neutral-300 text-sm">
+                    Seller: {item.email}
+                  </p>
                 </div>
               ),
               className: "col-span-1",
@@ -119,7 +140,13 @@ const SellBuySection = () => {
           </span>
           <div className="relative flex space-x-2 items-center z-10 rounded-full bg-zinc-950 py-0.5 px-4 ring-1 ring-white/10">
             <span>Show more</span>
-            <svg fill="none" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              fill="none"
+              height="16"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path
                 d="M10.75 8.75L14.25 12L10.75 15.25"
                 stroke="currentColor"
