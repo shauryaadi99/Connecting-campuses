@@ -158,40 +158,38 @@ const Navbar = () => {
       <Toaster />
 
       <nav className="fixed w-full z-50 bg-white/30 backdrop-blur-lg shadow-sm transition">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-16">
-          <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-16">
+          <div className="flex items-center justify-between h-20">
             <a
               href="/"
-              className="text-xl sm:text-2xl md:text-3xl font-extrabold text-orange-500 hover:text-orange-600 transition"
+              className="text-2xl font-extrabold text-orange-500 hover:text-orange-600 transition"
             >
               ConnectingCampuses
             </a>
 
             {/* Desktop Nav */}
-            <div className="hidden sm:flex items-center space-x-5 md:space-x-8">
-              <div className="flex items-center space-x-5 whitespace-nowrap">
-                {navLinks.map(({ href, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    onClick={(e) => handleNavClick(e, href)}
-                    className="text-base md:text-lg font-semibold text-gray-800 hover:text-orange-500 transition hover:scale-105"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
+            <div className="hidden md:flex items-center space-x-8">
+              {navLinks.map(({ href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  onClick={(e) => handleNavClick(e, href)}
+                  className="text-xl font-semibold text-gray-800 hover:text-orange-500 transition transform hover:scale-110"
+                >
+                  {label}
+                </a>
+              ))}
               {LoginOrProfileButton}
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="sm:hidden">
+            <div className="md:hidden">
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-orange-500 p-2"
                 aria-label="Toggle menu"
               >
-                {isOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+                {isOpen ? <FaTimes size={26} /> : <FaBars size={26} />}
               </button>
             </div>
           </div>
@@ -199,14 +197,14 @@ const Navbar = () => {
 
         {/* Mobile Nav */}
         {isOpen && (
-          <div className="sm:hidden fixed top-16 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-orange-100 animate-slideDown z-40">
+          <div className="md:hidden fixed top-20 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-orange-100 animate-slideDown z-40">
             <div className="flex flex-col px-6 py-5 space-y-4 text-center">
               {navLinks.map(({ href, label }) => (
                 <a
                   key={label}
                   href={href}
                   onClick={(e) => handleNavClick(e, href)}
-                  className="text-base font-medium text-gray-800 hover:text-orange-600 transition"
+                  className="text-sm font-semibold text-gray-800 hover:text-orange-600 py-2 transition transform hover:scale-105"
                 >
                   {label}
                 </a>
@@ -237,23 +235,22 @@ const Navbar = () => {
 
       {/* Login Modal */}
       {showLogin && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 py-6 sm:px-6 md:px-8">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4">
             <div
               ref={modalRef}
-              className="relative w-full max-w-md sm:max-w-lg bg-black bg-opacity-90 rounded-lg shadow-xl p-6 sm:p-8 md:p-10"
+              className="bg-black bg-opacity-90 rounded-lg shadow-xl max-w-lg w-full p-6 sm:p-10 relative"
             >
               <button
                 onClick={() => setShowLogin(false)}
-                className="absolute top-3 right-4 text-white text-3xl leading-none hover:text-amber-500 transition"
-                aria-label="Close login modal"
+                className="absolute right-5 top-3 text-white text-3xl hover:text-amber-600"
               >
                 &times;
               </button>
               <LoginForm
                 onLoginSuccess={() => setShowLogin(false)}
-                onClose={() => setShowLogin(false)}
-              />
+                onClose={() => setShowLogin(false)} // close when needed
+              />{" "}
             </div>
           </div>
         </div>
