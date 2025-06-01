@@ -12,18 +12,14 @@ export const registerUser = async (req, res) => {
 
     const { name, email, phone, password, graduatingYear } = req.body;
 
-    console.log("📥 Incoming request to register user:", req.body);
-
     // Validation
     if (!name || !email || !phone || !password || !graduatingYear) {
-      console.warn("⚠️ Missing fields in registration data.");
       return res
         .status(400)
         .json({ message: "All fields are required", success: false });
     }
 
     if (!email.endsWith("@bitmesra.ac.in")) {
-      console.warn("⚠️ Non-BIT Mesra email attempted:", email);
       return res.status(400).json({
         message: "Only BIT Mesra email IDs are allowed",
         success: false,
@@ -32,7 +28,6 @@ export const registerUser = async (req, res) => {
 
     const currentYear = new Date().getFullYear();
     if (parseInt(graduatingYear) < currentYear) {
-      console.warn("⚠️ Invalid graduating year:", graduatingYear);
       return res.status(400).json({
         message: "Graduating year must be current or future",
         success: false,
@@ -42,13 +37,11 @@ export const registerUser = async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       if (existingUser.isVerified) {
-        console.warn("⚠️ User already verified:", email);
         return res.status(400).json({
           message: "User already exists and is verified",
           success: false,
         });
       } else {
-        console.warn("⚠️ User exists but not verified:", email);
         return res.status(400).json({
           message: "User already exists but not verified",
           success: false,
@@ -56,27 +49,21 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    console.log("🔐 Hashing password...");
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const tokenExpires = Date.now() + 1000 * 60 * 60; // 1 hour
 
-    console.log("📦 Creating new user...");
     const newUser = await User.create({
       name,
       email,
       phone,
-      password: hashedPassword,
+      password, // ✅ plain password - will be hashed by schema
       graduatingYear,
       verificationToken,
       tokenExpires,
     });
 
     const verifyURL = `${process.env.CLIENT_BASE_URL}/verify-email?token=${verificationToken}`;
-    console.log("🔗 Verification URL generated:", verifyURL);
 
-    console.log("📧 Setting up email transporter...");
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -86,43 +73,22 @@ export const registerUser = async (req, res) => {
     });
 
     try {
-      console.log("📨 Preparing to send verification email...");
-
-      const mailOptions = {
+      await transporter.sendMail({
         from: `"CONNECTING CAMPUSES" <${process.env.EMAIL_USER}>`,
         to: newUser.email,
         subject: "Verify Your Email",
         html: `<p>Hi ${newUser.name},</p>
-      <p>Click the link below to verify your account:</p>
-      <a href="${verifyURL}">${verifyURL}</a>
-      <p>This link will expire in 1 hour.</p>`,
-      };
-
-      console.log(
-        "📦 Email options prepared:",
-        JSON.stringify(mailOptions, null, 2)
-      );
-
-      const result = await transporter.sendMail(mailOptions);
-
-      console.log("✅ Verification email sent successfully.");
-      console.log("📬 sendMail() result:", result);
+        <p>Click the link below to verify your account:</p>
+        <a href="${verifyURL}">${verifyURL}</a>
+        <p>This link will expire in 1 hour.</p>`,
+      });
     } catch (mailErr) {
-      console.error("❌ Failed to send verification email:", mailErr);
-
-      if (mailErr.response) {
-        console.error("📭 SMTP response:", mailErr.response);
-      }
-
-      console.error("📭 Full error details:", JSON.stringify(mailErr, null, 2));
-
+      console.error("❌ Email send error:", mailErr);
       return res.status(500).json({
         message: "User created, but failed to send verification email.",
         success: false,
       });
     }
-
-    console.log("✅ Verification email sent successfully.");
 
     return res.status(201).json({
       message:
@@ -130,7 +96,7 @@ export const registerUser = async (req, res) => {
       success: true,
     });
   } catch (error) {
-    console.error("❌ Internal server error during registration:", error);
+    console.error("❌ Registration error:", error);
     return res.status(500).json({
       message: "Internal server error",
       success: false,
@@ -138,6 +104,7 @@ export const registerUser = async (req, res) => {
     });
   }
 };
+
 
 // LOGIN
 export const loginUser = async (req, res) => {
@@ -160,6 +127,7 @@ export const loginUser = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log("❌ Password mismatch for user:", email);
       return res.status(400).json({
         message: "Invalid email or password",
         success: false,
