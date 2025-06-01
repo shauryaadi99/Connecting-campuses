@@ -8,16 +8,14 @@ import axios from "axios";
 import { getImageSrc, Loader } from "./SellBuyPage";
 
 // Sample data
-const [isLoadingItems, setIsLoadingItems] = useState(false);
-const [isSubmitting, setIsSubmitting] = useState(false);
 
 const WhatsappIcon = () => (
   <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    className="w-6 h-6 text-white"
-    aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  fill="currentColor"
+  viewBox="0 0 24 24"
+  className="w-6 h-6 text-white"
+  aria-hidden="true"
   >
     <path d="M20.52 3.48A11.815 11.815 0 0012 0C5.373 0 0 5.373 0 12c0 2.11.554 4.088 1.52 5.82L0 24l6.29-1.56a11.82 11.82 0 005.71 1.44c6.627 0 12-5.373 12-12 0-1.93-.547-3.726-1.48-5.4zM12 21.82a9.77 9.77 0 01-5.25-1.5l-.38-.23-3.7.92.99-3.61-.25-.37A9.782 9.782 0 012.22 12c0-5.42 4.4-9.82 9.82-9.82 2.62 0 5.08 1.02 6.93 2.88a9.755 9.755 0 012.88 6.94c0 5.42-4.4 9.82-9.82 9.82zm5.42-7.62c-.29-.15-1.7-.84-1.96-.94-.26-.1-.44-.15-.63.15s-.72.94-.89 1.13c-.16.19-.32.21-.6.07-.29-.15-1.23-.45-2.35-1.45-.87-.78-1.46-1.75-1.63-2.04-.17-.29-.02-.45.13-.6.14-.14.3-.36.44-.54.14-.18.19-.31.29-.52.1-.21.05-.39-.03-.54-.08-.15-.63-1.52-.87-2.08-.23-.54-.47-.47-.63-.47-.16 0-.35-.02-.54-.02-.19 0-.5.07-.76.37-.26.29-1 1-1 2.45s1.03 2.83 1.17 3.03c.14.21 2.01 3.06 4.88 4.28.68.29 1.21.46 1.62.59.68.21 1.3.18 1.79.11.55-.08 1.7-.69 1.94-1.35.24-.66.24-1.23.17-1.35-.07-.11-.26-.18-.55-.32z" />
   </svg>
@@ -39,6 +37,8 @@ const BottomGradient = () => (
 const LostAndFoundListing = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortOrder, setSortOrder] = useState("newest");
   const [items, setItems] = useState([]);
   const [imageFile, setImageFile] = useState(null);
@@ -516,4 +516,3 @@ const LostAndFoundListing = () => {
 };
 
 export default LostAndFoundListing;
- 
