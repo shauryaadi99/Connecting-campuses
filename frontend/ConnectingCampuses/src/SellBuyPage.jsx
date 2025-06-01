@@ -6,7 +6,7 @@ import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { USER_API_ENDPOINT } from "../constants";
 
-const Loader = () => (
+export const Loader = () => (
   <div className="flex flex-col justify-center items-center min-h-[40vh] space-y-4">
     <div className="relative w-16 h-16">
       <div className="absolute w-full h-full border-4 border-t-transparent border-cyan-400 rounded-full animate-spin" />
