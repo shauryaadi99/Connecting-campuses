@@ -160,7 +160,7 @@ export default function CarpoolingListing() {
                   key={post._id}
                   className="relative bg-white text-gray-900 rounded-2xl border border-slate-200 shadow-md p-5 hover:shadow-xl transition-transform duration-300 hover:scale-[1.02]"
                 >
-                  {post.email === user.email && (
+                  {user?.email && post.email === user.email && (
                     <button
                       onClick={() => handleDeletePost(post._id)}
                       className="absolute top-3 right-3 text-red-600 hover:text-red-800"
