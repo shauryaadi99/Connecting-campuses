@@ -5,9 +5,11 @@ import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { USER_API_ENDPOINT } from "../constants";
 import axios from "axios";
-import { getImageSrc } from "./SellBuyPage";
+import { getImageSrc, Loader } from "./SellBuyPage";
 
 // Sample data
+const [isLoadingItems, setIsLoadingItems] = useState(false);
+const [isSubmitting, setIsSubmitting] = useState(false);
 
 const WhatsappIcon = () => (
   <svg
@@ -83,6 +85,7 @@ const LostAndFoundListing = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("title", newItem.title);
@@ -106,7 +109,7 @@ const LostAndFoundListing = () => {
       setItems((prevItems) => [...prevItems, res.data]);
       setIsModalOpen(false);
       setImageFile(null);
-      fetchItems(); // Refresh listings
+      fetchItems();
       setNewItem({
         title: "",
         description: "",
@@ -118,23 +121,24 @@ const LostAndFoundListing = () => {
     } catch (error) {
       console.error("Failed to add item:", error);
       alert("Error submitting item. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const fetchItems = async () => {
+    setIsLoadingItems(true);
     try {
       const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
-
-      // Add imageSrc to each item
       const itemsWithImages = res.data.map((item) => ({
         ...item,
         imageSrc: getImageSrc(item.photo),
       }));
-
       setItems(itemsWithImages);
-      console.log("Fetched items:", itemsWithImages);
     } catch (error) {
       console.error("Failed to fetch items:", error);
+    } finally {
+      setIsLoadingItems(false);
     }
   };
 
@@ -237,7 +241,9 @@ const LostAndFoundListing = () => {
         </aside>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-          {filteredItems.length === 0 ? (
+          {isLoadingItems ? (
+            <Loader />
+          ) : filteredItems.length === 0 ? (
             <p className="text-center col-span-full text-gray-500">
               No items found matching your criteria or all items have future
               dates.
