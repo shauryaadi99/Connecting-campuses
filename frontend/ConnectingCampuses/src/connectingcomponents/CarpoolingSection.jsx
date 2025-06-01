@@ -70,7 +70,7 @@ export default function CarpoolingSection({ user }) {
                 )}
 
                 <a
-                  href={`https://wa.me/${post.phoneNumber}`}
+                  href={`https://wa.me/${phone}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Chat on WhatsApp"
