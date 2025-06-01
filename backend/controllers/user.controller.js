@@ -41,11 +41,19 @@ export const registerUser = async (req, res) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.warn("⚠️ User already exists:", email);
-      return res.status(400).json({
-        message: "User already exists with this email",
-        success: false,
-      });
+      if (existingUser.isVerified) {
+        console.warn("⚠️ User already verified:", email);
+        return res.status(400).json({
+          message: "User already exists and is verified",
+          success: false,
+        });
+      } else {
+        console.warn("⚠️ User exists but not verified:", email);
+        return res.status(400).json({
+          message: "User already exists but not verified",
+          success: false,
+        });
+      }
     }
 
     console.log("🔐 Hashing password...");
