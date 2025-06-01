@@ -19,6 +19,8 @@ export function SignupFormDemo({ setShowSignup }) {
   const [loading, setLoading] = useState(false);
 
   const [alert, setAlert] = useState({ message: "", type: "" });
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isVerified, setIsVerified] = useState(null); // null, true, or false
 
   useEffect(() => {
     if (alert.type === "success") {
@@ -28,9 +30,7 @@ export function SignupFormDemo({ setShowSignup }) {
       }, 3000);
 
       return () => clearTimeout(timer); // cleanup timer if component unmounts or alert changes
-    } else {
-      setShowResend(false);
-    }
+    } 
   }, [alert]);
 
   const handleChange = (e) => {
@@ -77,11 +77,22 @@ export function SignupFormDemo({ setShowSignup }) {
 
       toast.success("✅ Please verify your email to activate your account.");
     } catch (error) {
-      const message = error.response?.data?.message || "Signup failed";
-      setAlert({ message, type: "error" });
-
-      if (message.includes("already exists")) {
+      const message = error.response?.data?.message;
+      
+      if (message.includes("not verified")) {
+        // optionally show "Resend verification email" button
         setShowResend(true);
+        setAlert({
+          message: "You are already registered but not verified.",
+          type: "warning",
+        });
+      } else if (message.includes("verified")) {
+        setAlert({
+          message: "User already registered. Please log in.",
+          type: "info",
+        });
+      } else {
+        setAlert({ message: "Signup failed. Try again.", type: "error" });
       }
     } finally {
       setLoading(false);
@@ -182,12 +193,12 @@ export function SignupFormDemo({ setShowSignup }) {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || isRegistered}
               className={cn(
                 "group/btn mt-4 relative block h-10 w-full rounded-md text-sm font-medium text-white",
                 "bg-gradient-to-br from-black to-neutral-600 shadow-[0px_1px_0px_0px_#ffffff40_inset,0px_-1px_0px_0px_#ffffff40_inset]",
                 "dark:bg-zinc-800 dark:from-zinc-900 dark:to-zinc-900 dark:shadow-[0px_1px_0px_0px_#27272a_inset,0px_-1px_0px_0px_#27272a_inset]",
-                loading && "opacity-60 cursor-not-allowed"
+                (loading || isRegistered) && "opacity-60 cursor-not-allowed"
               )}
             >
               {loading ? (
@@ -213,6 +224,14 @@ export function SignupFormDemo({ setShowSignup }) {
                     ></path>
                   </svg>
                 </div>
+              ) : isRegistered && isVerified ? (
+                <span className="text-sm font-medium text-white opacity-70">
+                  User already registered. Please login.
+                </span>
+              ) : isRegistered && isVerified === false ? (
+                <span className="text-sm font-medium text-white opacity-70">
+                  You're already registered but not verified.
+                </span>
               ) : (
                 <>
                   Sign up &rarr;
