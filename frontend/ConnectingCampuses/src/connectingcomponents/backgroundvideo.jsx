@@ -42,7 +42,7 @@ const BackgroundVideo = () => {
 
       {/* Video Layer */}
       {/* Uncomment the video part when you're ready */}
-      {/* <div className="absolute inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <video
           autoPlay
           loop
@@ -54,7 +54,7 @@ const BackgroundVideo = () => {
           <source src="/Video.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
-      </div> */}
+      </div> 
 
       {/* Inline CSS for image fading */}
       <style>
