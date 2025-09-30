@@ -1,4 +1,5 @@
 import React from "react";
+import BackgroundVideo from "./backgroundvideo";
 
 export default function LandingPage() {
   return (
@@ -21,7 +22,7 @@ export default function LandingPage() {
       >
         {/* Background Video Layer */}
         <div className="absolute inset-0 z-0 overflow-hidden">
-          <video
+          {/* <video
             autoPlay
             loop
             muted
@@ -30,7 +31,8 @@ export default function LandingPage() {
           >
             <source src="/Video.mp4" type="video/mp4" />
             Your browser does not support the video tag.
-          </video>
+          </video> */}
+        <BackgroundVideo/>
         </div>
 
         {/* Text Section */}
@@ -105,7 +107,7 @@ export default function LandingPage() {
                 src="/bitphoto.JPG"
                 alt="campus"
                 className="w-full h-full object-cover rounded-3xl"
-                style={{ transform: "translateX(-20px)" }}
+                style={{ transform: "translateX(1px)" }}
               />
             </a>
           </div>
