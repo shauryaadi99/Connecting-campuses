@@ -8,14 +8,41 @@ import axios from "axios";
 import { getImageSrc } from "./SellBuyPage";
 
 // Sample data
+const Loader = ({ message = "Loading, please wait..." }) => (
+  <div className="fixed inset-0 flex flex-col justify-center items-center bg-black bg-opacity-80 z-50">
+    <svg
+      className="animate-spin h-14 w-14 text-cyan-400"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      aria-label="Loading spinner"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+      />
+    </svg>
+    <p className="mt-4 text-cyan-300 text-lg font-semibold">{message}</p>
+  </div>
+);
+
 
 const WhatsappIcon = () => (
   <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    className="w-6 h-6 text-white"
-    aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+  fill="currentColor"
+  viewBox="0 0 24 24"
+  className="w-6 h-6 text-white"
+  aria-hidden="true"
   >
     <path d="M20.52 3.48A11.815 11.815 0 0012 0C5.373 0 0 5.373 0 12c0 2.11.554 4.088 1.52 5.82L0 24l6.29-1.56a11.82 11.82 0 005.71 1.44c6.627 0 12-5.373 12-12 0-1.93-.547-3.726-1.48-5.4zM12 21.82a9.77 9.77 0 01-5.25-1.5l-.38-.23-3.7.92.99-3.61-.25-.37A9.782 9.782 0 012.22 12c0-5.42 4.4-9.82 9.82-9.82 2.62 0 5.08 1.02 6.93 2.88a9.755 9.755 0 012.88 6.94c0 5.42-4.4 9.82-9.82 9.82zm5.42-7.62c-.29-.15-1.7-.84-1.96-.94-.26-.1-.44-.15-.63.15s-.72.94-.89 1.13c-.16.19-.32.21-.6.07-.29-.15-1.23-.45-2.35-1.45-.87-.78-1.46-1.75-1.63-2.04-.17-.29-.02-.45.13-.6.14-.14.3-.36.44-.54.14-.18.19-.31.29-.52.1-.21.05-.39-.03-.54-.08-.15-.63-1.52-.87-2.08-.23-.54-.47-.47-.63-.47-.16 0-.35-.02-.54-.02-.19 0-.5.07-.76.37-.26.29-1 1-1 2.45s1.03 2.83 1.17 3.03c.14.21 2.01 3.06 4.88 4.28.68.29 1.21.46 1.62.59.68.21 1.3.18 1.79.11.55-.08 1.7-.69 1.94-1.35.24-.66.24-1.23.17-1.35-.07-.11-.26-.18-.55-.32z" />
   </svg>
@@ -37,6 +64,8 @@ const BottomGradient = () => (
 const LostAndFoundListing = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [sortOrder, setSortOrder] = useState("newest");
   const [items, setItems] = useState([]);
   const [imageFile, setImageFile] = useState(null);
@@ -83,6 +112,7 @@ const LostAndFoundListing = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const formData = new FormData();
       formData.append("title", newItem.title);
@@ -106,7 +136,7 @@ const LostAndFoundListing = () => {
       setItems((prevItems) => [...prevItems, res.data]);
       setIsModalOpen(false);
       setImageFile(null);
-      fetchItems(); // Refresh listings
+      fetchItems();
       setNewItem({
         title: "",
         description: "",
@@ -118,23 +148,24 @@ const LostAndFoundListing = () => {
     } catch (error) {
       console.error("Failed to add item:", error);
       alert("Error submitting item. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const fetchItems = async () => {
+    setIsLoadingItems(true);
     try {
       const res = await axios.get(`${USER_API_ENDPOINT}/api/l-f-items/`);
-
-      // Add imageSrc to each item
       const itemsWithImages = res.data.map((item) => ({
         ...item,
         imageSrc: getImageSrc(item.photo),
       }));
-
       setItems(itemsWithImages);
-      console.log("Fetched items:", itemsWithImages);
     } catch (error) {
       console.error("Failed to fetch items:", error);
+    } finally {
+      setIsLoadingItems(false);
     }
   };
 
@@ -237,7 +268,9 @@ const LostAndFoundListing = () => {
         </aside>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 flex-1">
-          {filteredItems.length === 0 ? (
+          {isLoadingItems ? (
+            <Loader />
+          ) : filteredItems.length === 0 ? (
             <p className="text-center col-span-full text-gray-500">
               No items found matching your criteria or all items have future
               dates.
@@ -396,54 +429,54 @@ const LostAndFoundListing = () => {
                 </LabelInputContainer>
 
                 <LabelInputContainer>
-                                <Label
-                                  htmlFor="photo"
-                                  className="text-sm font-semibold text-gray-300 mb-2 block"
-                                >
-                                  Upload Image*
-                                </Label>
-                
-                                <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    required
-                                    onChange={(e) => setImageFile(e.target.files[0])}
-                                    className="hidden"
-                                  />
-                                  <div className="flex flex-col items-center space-y-2">
-                                    <svg
-                                      className="w-8 h-8 text-blue-400"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M12 4v16m8-8H4"
-                                      />
-                                    </svg>
-                                    <span className="text-sm">
-                                      Click to upload or drag and drop
-                                    </span>
-                                  </div>
-                                </label>
-                
-                                {imageFile && (
-                                  <div className="mt-3">
-                                    <p className="text-xs text-gray-400 mb-1">
-                                      Selected image:
-                                    </p>
-                                    <img
-                                      src={URL.createObjectURL(imageFile)}
-                                      alt="Preview"
-                                      className="w-full h-48 object-cover rounded border border-gray-600"
-                                    />
-                                  </div>
-                                )}
-                              </LabelInputContainer>
+                  <Label
+                    htmlFor="photo"
+                    className="text-sm font-semibold text-gray-300 mb-2 block"
+                  >
+                    Upload Image*
+                  </Label>
+
+                  <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      required
+                      onChange={(e) => setImageFile(e.target.files[0])}
+                      className="hidden"
+                    />
+                    <div className="flex flex-col items-center space-y-2">
+                      <svg
+                        className="w-8 h-8 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      <span className="text-sm">
+                        Click to upload or drag and drop
+                      </span>
+                    </div>
+                  </label>
+
+                  {imageFile && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-400 mb-1">
+                        Selected image:
+                      </p>
+                      <img
+                        src={URL.createObjectURL(imageFile)}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded border border-gray-600"
+                      />
+                    </div>
+                  )}
+                </LabelInputContainer>
 
                 <LabelInputContainer>
                   <Label htmlFor="contact">Contact Email*</Label>
@@ -478,7 +511,9 @@ const LostAndFoundListing = () => {
                     value={newItem.whatsapp}
                     onChange={handleInputChange}
                     required
-                    placeholder="+1234567890"
+                    placeholder="9876543210"
+                    pattern="[6-9]{1}[0-9]{9}"
+                    maxLength={10}
                     className="w-full"
                   />
                 </LabelInputContainer>

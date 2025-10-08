@@ -1,6 +1,36 @@
 import React from "react";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
+  const posterImages = [
+    "/Screenshot (286).png",
+    "/Screenshot (287).png",
+    "/Screenshot (288).png",
+    "/Screenshot (289).png",
+    "/Screenshot (290).png",
+    "/Screenshot (291).png",
+    "/Screenshot (292).png",
+    "/Screenshot (293).png",
+    "/Screenshot (294).png",
+    "/Screenshot (295).png",
+    "/Screenshot (296).png",
+    "/Screenshot (297).png",
+  ];
+  const [currentPoster, setCurrentPoster] = useState(posterImages[0]);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    let index = 0;
+    const interval = setInterval(() => {
+      if (!videoLoaded) {
+        // only switch until video is ready
+        index = (index + 1) % posterImages.length;
+        setCurrentPoster(posterImages[index]);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [videoLoaded]);
   return (
     <div className="relative min-h-screen w-full bg-gradient-to-br from-orange-50 via-white to-orange-100 text-gray-800 font-sans overflow-hidden">
       {/* Hero Section */}
@@ -27,8 +57,10 @@ export default function LandingPage() {
             muted
             playsInline
             className="w-full h-full object-cover"
+            poster={currentPoster}
+            onLoadedData={() => setVideoLoaded(true)} // stop cycling when video loads
           >
-            <source src="/Video.mp4" type="video/mp4" />
+            <source src="/optimisedVideo.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
@@ -50,11 +82,6 @@ export default function LandingPage() {
               Explore Now
             </span>
           </button>
-
-          {/* <button className="relative group px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full font-semibold shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-orange-300">
-            <span className="relative z-10">Explore Now</span>
-            <span className="absolute inset-0 rounded-full bg-orange-500 opacity-0 group-hover:opacity-20 transition duration-300 animate-pulse pointer-events-none"></span>
-          </button> */}
         </div>
 
         {/* Image Section */}
@@ -102,10 +129,10 @@ export default function LandingPage() {
               rel="noopener noreferrer"
             >
               <img
-                src="/bitphoto.JPG"
+                src="/bitphoto.jpg"
                 alt="campus"
                 className="w-full h-full object-cover rounded-3xl"
-                style={{ transform: "translateX(-20px)" }}
+                style={{ transform: "translateX(0px)" }}
               />
             </a>
           </div>

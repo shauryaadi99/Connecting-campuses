@@ -7,11 +7,9 @@ import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { cn } from "../lib/utils";
 import { USER_API_ENDPOINT } from "../../constants";
-
 import { SignupFormDemo } from "./Signup";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-// adjust path if needed
 
 const LoginForm = ({ onLoginSuccess, onClose }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -27,13 +25,18 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
+  // Resend verification email
   const resendVerification = async () => {
+    if (!formData.email) {
+      toast.error("Enter your BIT Mesra email first.");
+      return;
+    }
     try {
       setLoading(true);
       await axios.post(`${USER_API_ENDPOINT}/api/user/resend-verification`, {
         email: formData.email,
       });
-      toast.success("Verification email resent. Please check your inbox.");
+      toast.success("✅ Verification email resent. Check your inbox.");
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to resend verification email."
@@ -44,7 +47,7 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
   };
 
   const handleForgotPassword = () => {
-    if (onClose) onClose(); // Close login popup/modal
+    if (onClose) onClose(); // Close modal/popup if any
     navigate("/forgot-password");
   };
 
@@ -53,12 +56,11 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
     setErrorMsg("");
     setLoading(true);
 
-    console.log("Login form submitted with data:", formData);
-
+    // --- Basic validation ---
     if (!formData.email || !formData.password) {
-      setErrorMsg("Both fields are required.");
+      setErrorMsg("Both email and password are required.");
+      toast.error("❌ Both fields are required.");
       setLoading(false);
-      console.log("Login failed: missing email or password");
       return;
     }
 
@@ -66,61 +68,57 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
       const res = await axios.post(
         `${USER_API_ENDPOINT}/api/user/login`,
         formData,
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true, // Important: send cookies with request
-        }
+        { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
 
-      console.log("Login API response:", res.data);
+      const { success, user, message } = res.data;
 
-      if (!res.data.success) {
-        setErrorMsg(res.data.message || "Login failed.");
+      if (!success) {
+        setErrorMsg(message || "Login failed. Please check your credentials.");
+        toast.error(`❌ ${message || "Login failed."}`);
         setLoading(false);
-        console.log("Login failed: success flag false");
         return;
       }
 
-      const user = res.data.user;
-
-      // Store user info only, no token
-      localStorage.setItem("user", JSON.stringify(user));
-
-      console.log("User stored:", localStorage.getItem("user"));
+      if (!user) {
+        setErrorMsg("User not found. Please sign up first.");
+        toast.error("❌ User not found. Sign up to continue.");
+        setLoading(false);
+        return;
+      }
 
       if (!user.isVerified) {
-        setErrorMsg("Please verify your email before logging in.");
-        toast.error("Please verify your email to activate your account.");
+        setErrorMsg("Your email is not verified. Please verify first.");
+        toast.error(
+          "❌ Email not verified. Check your inbox or resend verification."
+        );
         setLoading(false);
         return;
       }
-      console.log("User from server:", user);
 
-      // No token in localStorage, no need to set axios default headers here
-      // Because the token is automatically sent in cookies with future requests (if withCredentials is set)
-
-      login(user); // from AuthContext
-
-      const username = user?.name || user?.email || "User";
+      // --- Successful login ---
+      localStorage.setItem("user", JSON.stringify(user));
+      login(user); // Update AuthContext
       setAlert({
-        message: `Welcome back, ${username}! Redirecting to home...`,
+        message: `Welcome back, ${user.name || "Student"}! Redirecting...`,
         type: "success",
       });
-      toast.success(`Welcome back, ${username}!`);
+      toast.success(`✅ Welcome back, ${user.name || "Student"}!`);
 
-      setTimeout(() => {
-        window.location.href = "/profile";
-      }, 100);
+      setTimeout(() => navigate("/profile"), 100);
 
       if (onLoginSuccess) onLoginSuccess();
-    } catch (error) {
-      setErrorMsg(error.response?.data?.message || "Login failed.");
-      console.error("Login error:", error);
+    } catch (err) {
+      const msg =
+        err.response?.data?.message || "Server error. Please try again later.";
+      setErrorMsg(msg);
+      toast.error(`❌ ${msg}`);
     } finally {
       setLoading(false);
     }
   };
 
+  // --- Signup toggle ---
   if (showSignup) {
     return (
       <div className="w-full flex justify-center">
@@ -145,8 +143,7 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
 
   return (
     <>
-      <Toaster />
-
+      <Toaster position="top-center" reverseOrder={false} />
       <div className="w-full flex justify-center">
         <div className="shadow-input w-full max-w-md rounded-lg bg-transparent p-6 dark:bg-black">
           <h2 className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
@@ -155,6 +152,7 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
             Login with your BIT Mesra email
           </p>
+
           {alert.message && (
             <div
               className={cn(
@@ -173,10 +171,13 @@ const LoginForm = ({ onLoginSuccess, onClose }) => {
               <div className="text-sm text-red-500 font-medium">{errorMsg}</div>
             )}
 
+            {/* Show resend verification link only if email is not verified */}
             {!loading &&
-              errorMsg === "Please verify your email before logging in." && (
+              errorMsg ===
+                "Your email is not verified. Please verify first." && (
                 <div className="mt-2 text-sm">
                   <button
+                    type="button"
                     onClick={resendVerification}
                     className="text-blue-600 hover:underline"
                   >
@@ -255,10 +256,10 @@ const BottomGradient = () => (
 );
 
 const LabelInputContainer = ({ children, className }) => (
-  <div className={cn("flex w-full flex-col space-y-1", className)}>
-    {children}
-  </div>
+  <div className={cn("flex w-full flex-col space-y-1", className)}>{children}</div>
 );
+
+
 
 // ----- LOGOUT FUNCTION (use it wherever needed) -----
 // Example usage:

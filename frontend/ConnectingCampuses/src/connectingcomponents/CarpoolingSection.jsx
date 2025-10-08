@@ -5,6 +5,17 @@ import { USER_API_ENDPOINT } from "../../constants";
 
 export default function CarpoolingSection({ user }) {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+  setLoading(true); // start loading
+  axios
+    .get(`${USER_API_ENDPOINT}/api/carpools`, { withCredentials: true })
+    .then((res) => setPosts(res.data))
+    .catch((err) => console.error("Error fetching carpools:", err.message))
+    .finally(() => setLoading(false)); // stop loading
+}, []);
+
 
   useEffect(() => {
     axios
@@ -13,11 +24,21 @@ export default function CarpoolingSection({ user }) {
       .catch((err) => console.error("Error fetching carpools:", err.message));
   }, []);
 
-  const getPhoneNumberFromEmail = (email) => {
-    // This function can be customized based on how you want to extract phone number
-    // For now, fallback to default number or fetch from post.phoneNumber if available
-    const foundPost = posts.find((p) => p.userEmail === email);
-    return foundPost?.phoneNumber || "919876543210";
+  const formatIndianPhoneNumber = (number) => {
+    // if (!number) return "N/A";
+
+    // // Remove non-digit characters
+    // const digits = number.replace(/\D/g, "");
+
+    // // If already 10 digits, prepend +91
+    // if (digits.length === 10) return `+91 ${digits}`;
+
+    // // If already includes country code like 91XXXXXXXXXX
+    // if (digits.length === 12 && digits.startsWith("91")) {
+    //   return `+91 ${digits.slice(2)}`;
+    // }
+
+    return number; // fallback
   };
 
   const displayedPosts = posts.slice(0, 6);
@@ -31,7 +52,9 @@ export default function CarpoolingSection({ user }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {displayedPosts.map((post) => {
-            const phone = getPhoneNumberFromEmail(post.userEmail);
+            const phone = formatIndianPhoneNumber(
+              post.contactNumber || "919876543210"
+            );
             return (
               <div
                 key={post._id}
@@ -70,11 +93,11 @@ export default function CarpoolingSection({ user }) {
                 )}
 
                 <a
-                  href={`https://wa.me/${post.phoneNumber}`}
+                  href={`https://wa.me/${phone}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Chat on WhatsApp"
-                  className="absolute bottom-3 right-3  transition-transform"
+                  className="absolute bottom-3 right-3 transition-transform"
                 >
                   <svg
                     height="32"

@@ -13,6 +13,11 @@ import {
 import isAuthenticated from '../middlewares/isAuthenticated.js';
 import { verifyEmail } from '../controllers/verifyEmail.controller.js';
 
+import sendEmail from "../config/sendEmail.js";
+import crypto from "crypto";
+import User from "../models/user.model.js";
+
+
 const router = express.Router();
 
 // --- Public Routes ---

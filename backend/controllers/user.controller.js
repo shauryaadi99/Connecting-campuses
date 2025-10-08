@@ -2,130 +2,145 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as crypto from "node:crypto";
-import nodemailer from "nodemailer";
 import sendEmail from "../config/sendEmail.js";
+
+import dotenv from "dotenv";
+import dns from "dns/promises";
+// import sendEmail from "../config/sendEmail.js"; // SendGrid email sender
+
+dotenv.config();
+
+// Function to validate email existence via MX record
+const isEmailValid = async (email) => {
+  const domain = email.split("@")[1];
+  try {
+    const mxRecords = await dns.resolveMx(domain);
+    return mxRecords && mxRecords.length > 0;
+  } catch (err) {
+    console.log("❌ MX lookup failed:", err);
+    return false;
+  }
+};
 
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
-    console.log("📥 Incoming request to register user:", req.body);
+    console.log("📥 Incoming registration request:", req.body);
 
     const { name, email, phone, password, graduatingYear } = req.body;
 
-    console.log("📥 Incoming request to register user:", req.body);
-
-    // Validation
+    // --- Basic validation ---
     if (!name || !email || !phone || !password || !graduatingYear) {
-      console.warn("⚠️ Missing fields in registration data.");
-      return res
-        .status(400)
-        .json({ message: "All fields are required", success: false });
+      return res.status(400).json({
+        message: "All fields are required.",
+        success: false,
+      });
     }
 
     if (!email.endsWith("@bitmesra.ac.in")) {
-      console.warn("⚠️ Non-BIT Mesra email attempted:", email);
       return res.status(400).json({
-        message: "Only BIT Mesra email IDs are allowed",
+        message: "Only BIT Mesra email IDs are allowed.",
         success: false,
       });
     }
 
     const currentYear = new Date().getFullYear();
     if (parseInt(graduatingYear) < currentYear) {
-      console.warn("⚠️ Invalid graduating year:", graduatingYear);
       return res.status(400).json({
-        message: "Graduating year must be current or future",
+        message: "Graduating year must be the current year or later.",
         success: false,
       });
     }
 
+    // --- Validate if email actually exists ---
+    const validEmail = await isEmailValid(email);
+    if (!validEmail) {
+      return res.status(400).json({
+        message:
+          "⚠️ The provided email address seems invalid. Please enter a correct BIT Mesra email.",
+        success: false,
+      });
+    }
+
+    // --- Check if user already exists ---
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.warn("⚠️ User already exists:", email);
-      return res.status(400).json({
-        message: "User already exists with this email",
-        success: false,
-      });
+      if (existingUser.isVerified) {
+        return res.status(400).json({
+          message:
+            "User already exists and is verified. You can log in directly.",
+          success: false,
+        });
+      } else {
+        return res.status(400).json({
+          message:
+            "User exists but not verified. Please check your email or resend verification.",
+          success: false,
+        });
+      }
     }
 
-    console.log("🔐 Hashing password...");
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // --- Generate verification token ---
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const tokenExpires = Date.now() + 1000 * 60 * 60; // 1 hour
 
-    console.log("📦 Creating new user...");
+    // --- Create new user ---
     const newUser = await User.create({
       name,
       email,
       phone,
-      password: hashedPassword,
+      password, // hashed via schema middleware
       graduatingYear,
       verificationToken,
       tokenExpires,
     });
 
+    // --- Build verification URL ---
     const verifyURL = `${process.env.CLIENT_BASE_URL}/verify-email?token=${verificationToken}`;
-    console.log("🔗 Verification URL generated:", verifyURL);
+    console.log("🔗 Verification URL:", verifyURL);
 
-    console.log("📧 Setting up email transporter...");
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // --- Email content ---
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Welcome to Connecting Campuses, ${name}! 🎓</h2>
+        <p>Thank you for registering with Connecting Campuses. Please verify your email to activate your account and start exploring the platform.</p>
+        <a href="${verifyURL}" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:white;text-decoration:none;border-radius:5px;margin-top:10px;">Verify Email</a>
+        <p>If the button doesn’t work, copy and paste this link into your browser:</p>
+        <p><a href="${verifyURL}">${verifyURL}</a></p>
+        <p style="color: #555;">This link will expire in 1 hour for security purposes.</p>
+        <hr />
+        <p style="font-size:12px;color:#666;">© ${new Date().getFullYear()} Connecting Campuses | BIT Mesra</p>
+      </div>
+    `;
 
+    // --- Send verification email via SendGrid ---
     try {
-      console.log("📨 Preparing to send verification email...");
-
-      const mailOptions = {
-        from: `"CONNECTING CAMPUSES" <${process.env.EMAIL_USER}>`,
+      await sendEmail({
         to: newUser.email,
-        subject: "Verify Your Email",
-        html: `<p>Hi ${newUser.name},</p>
-      <p>Click the link below to verify your account:</p>
-      <a href="${verifyURL}">${verifyURL}</a>
-      <p>This link will expire in 1 hour.</p>`,
-      };
+        subject: "Verify Your Connecting Campuses Account",
+        text: `Please verify your email by clicking this link: ${verifyURL}`,
+        html: htmlContent,
+      });
 
-      console.log(
-        "📦 Email options prepared:",
-        JSON.stringify(mailOptions, null, 2)
-      );
-
-      const result = await transporter.sendMail(mailOptions);
-
-
-      console.log("✅ Verification email sent successfully.");
-      console.log("📬 sendMail() result:", result);
-    } catch (mailErr) {
-      console.error("❌ Failed to send verification email:", mailErr);
-
-      if (mailErr.response) {
-        console.error("📭 SMTP response:", mailErr.response);
-      }
-
-      console.error("📭 Full error details:", JSON.stringify(mailErr, null, 2));
-
+      console.log("✅ Verification email sent to:", newUser.email);
+    } catch (emailError) {
+      console.error("❌ Failed to send verification email:", emailError);
       return res.status(500).json({
-        message: "User created, but failed to send verification email.",
+        message:
+          "User registered, but failed to send verification email. Please try resending it.",
         success: false,
       });
     }
 
-    console.log("✅ Verification email sent successfully.");
-
     return res.status(201).json({
       message:
-        "User registered. Please check your email to verify your account.",
+        "✅ Registration successful! Please check your BIT Mesra email to verify your account.",
       success: true,
     });
   } catch (error) {
-    console.error("❌ Internal server error during registration:", error);
+    console.error("❌ Registration error:", error);
     return res.status(500).json({
-      message: "Internal server error",
+      message: "Internal server error. Please try again later.",
       success: false,
       error: error.message,
     });
@@ -153,6 +168,7 @@ export const loginUser = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log("❌ Password mismatch for user:", email);
       return res.status(400).json({
         message: "Invalid email or password",
         success: false,
@@ -183,8 +199,8 @@ export const loginUser = async (req, res) => {
       .status(200)
       .cookie("token", token, {
         httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
+        sameSite: "None", // ⛳ Allows cross-site cookies (required for Vercel <-> Render)
+        secure: true, // ⛳ Required for 'SameSite: None' to work properly
         maxAge: 24 * 60 * 60 * 1000,
       })
       .json({
@@ -307,78 +323,134 @@ export const updateProfile = async (req, res) => {
 
 export const resendVerificationEmail = async (req, res) => {
   try {
-    const { email } = req.body;
+    console.log("🔁 Incoming resend verification request");
 
+    const { email } = req.body;
+    console.log("📧 Email received:", email);
+
+    // --- Validation ---
     if (!email || !email.endsWith("@bitmesra.ac.in")) {
+      console.warn("⚠️ Invalid email format or domain");
       return res.status(400).json({
         message: "A valid BIT Mesra email is required.",
         success: false,
       });
     }
 
+    // --- Find user ---
     const user = await User.findOne({ email });
+    console.log("👤 User found:", !!user);
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "User not found", success: false });
+      console.warn("❌ User not found for email:", email);
+      return res.status(404).json({
+        message: "User not found. Please register first.",
+        success: false,
+      });
     }
 
     if (user.isVerified) {
-      return res
-        .status(400)
-        .json({ message: "User already verified", success: false });
+      console.info("✅ User already verified:", user.email);
+      return res.status(400).json({
+        message: "Your account is already verified. You can log in directly.",
+        success: false,
+      });
     }
 
-    // Generate a new token and expiry
+    // --- Generate new token ---
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const tokenExpires = Date.now() + 1000 * 60 * 60; // 1 hour
-
     user.verificationToken = verificationToken;
     user.tokenExpires = tokenExpires;
-    await user.save();
 
+    try {
+      await user.save();
+      console.log("💾 User saved with new verification token");
+    } catch (saveError) {
+      console.error("❌ Error saving user:", saveError);
+      return res.status(500).json({
+        message:
+          "Failed to save verification token. Please try again later.",
+        success: false,
+        error: saveError.message,
+      });
+    }
+
+    // --- Build verification URL ---
     const verifyURL = `${process.env.CLIENT_BASE_URL}/verify-email?token=${verificationToken}`;
+    console.log("🔗 Verification URL:", verifyURL);
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // --- Email content ---
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Hello ${user.name || "there"}! 👋</h2>
+        <p>You requested to resend the verification email for your Connecting Campuses account.</p>
+        <p>Please click the button below to verify your email and activate your account:</p>
+        <a href="${verifyURL}" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:white;text-decoration:none;border-radius:5px;margin-top:10px;">Verify Email</a>
+        <p>If the button doesn’t work, copy and paste this link in your browser:</p>
+        <p><a href="${verifyURL}">${verifyURL}</a></p>
+        <p>This verification link will expire in 1 hour.</p>
+        <hr />
+        <p style="font-size:12px;color:#666;">© ${new Date().getFullYear()} Connecting Campuses | BIT Mesra</p>
+      </div>
+    `;
 
-    await transporter.sendMail({
-      from: `"CONNECTING CAMPUSES" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: "Resend: Verify Your Email",
-      html: `<p>Hi ${user.name},</p>
-             <p>Click the link below to verify your account:</p>
-             <a href="${verifyURL}">${verifyURL}</a>
-             <p>This link will expire in 1 hour.</p>`,
-    });
+    // --- Send email via SendGrid ---
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Resend: Verify Your Connecting Campuses Account",
+        text: `Verify your email by clicking the link: ${verifyURL}`,
+        html: htmlContent,
+      });
+      console.log("📨 Verification email resent to:", user.email);
+    } catch (emailError) {
+      console.error(
+        "❌ Failed to send verification email:",
+        emailError
+      );
+      return res.status(500).json({
+        message:
+          "Failed to send verification email. Please try again later.",
+        success: false,
+        error: emailError.message,
+      });
+    }
 
     return res.status(200).json({
-      message: "Verification email resent. Please check your inbox.",
+      message:
+        "✅ Verification email resent successfully. Please check your inbox.",
       success: true,
     });
   } catch (error) {
+    console.error("❌ General error:", error);
     return res.status(500).json({
-      message: "Internal server error",
+      message: "Internal server error. Please try again later.",
       success: false,
       error: error.message,
     });
   }
 };
 
-
-
-
+// --- Forgot Password ---
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
+
   try {
+    if (!email || !email.endsWith("@bitmesra.ac.in")) {
+      return res.status(400).json({
+        message: "Please enter a valid BIT Mesra email address.",
+        success: false,
+      });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({
+        message: "No account found with this email. Please register first.",
+        success: false,
+      });
+    }
 
     const token = crypto.randomBytes(32).toString("hex");
     const tokenExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
@@ -389,18 +461,44 @@ export const forgotPassword = async (req, res) => {
 
     const resetURL = `${process.env.CLIENT_BASE_URL}/reset-password/${token}`;
 
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Hello ${user.name || "there"}! 👋</h2>
+        <p>We received a request to reset your Connecting Campuses password.</p>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetURL}" style="display:inline-block;padding:10px 20px;background-color:#4f46e5;color:white;text-decoration:none;border-radius:5px;margin-top:10px;">Reset Password</a>
+        <p>If the button doesn’t work, copy and paste this link into your browser:</p>
+        <p><a href="${resetURL}">${resetURL}</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <hr />
+        <p style="font-size:12px;color:#666;">© ${new Date().getFullYear()} Connecting Campuses | BIT Mesra</p>
+      </div>
+    `;
+
     await sendEmail({
       to: user.email,
-      subject: "Password Reset",
-      text: `Click the link to reset your password: ${resetURL}`,
+      subject: "Reset Your Connecting Campuses Password",
+      text: `Reset your password using this link: ${resetURL}`,
+      html: htmlContent,
     });
 
-    res.status(200).json({ message: "Password reset link sent to your email" });
+    console.log("📨 Password reset email sent to:", user.email);
+
+    res.status(200).json({
+      message: "✅ Password reset link sent successfully. Please check your email.",
+      success: true,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Error sending email", error: err.message });
+    console.error("❌ Error in forgotPassword:", err);
+    res.status(500).json({
+      message: "Internal server error. Please try again later.",
+      success: false,
+      error: err.message,
+    });
   }
 };
 
+// --- Reset Password ---
 export const resetPassword = async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -408,19 +506,32 @@ export const resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({
       resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }, // Not expired
+      resetPasswordExpires: { $gt: Date.now() }, // Token not expired
     });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid or expired password reset link.",
+        success: false,
+      });
+    }
 
-    user.password = password; // Hashing should be handled in a pre-save hook
+    user.password = password; // Hashing handled in pre-save hook
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
     await user.save();
 
-    res.status(200).json({ message: "Password reset successfully" });
+    res.status(200).json({
+      message: "✅ Password reset successfully. You can now log in with your new password.",
+      success: true,
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("❌ Error in resetPassword:", err);
+    res.status(500).json({
+      message: "Internal server error. Please try again later.",
+      success: false,
+      error: err.message,
+    });
   }
 };

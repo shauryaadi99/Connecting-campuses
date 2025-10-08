@@ -6,6 +6,18 @@ import { cn } from "./lib/utils";
 import { useAuth } from "./context/AuthContext";
 import { USER_API_ENDPOINT } from "../constants";
 
+export const Loader = () => (
+  <div className="flex flex-col justify-center items-center min-h-[40vh] space-y-4">
+    <div className="relative w-16 h-16">
+      <div className="absolute w-full h-full border-4 border-t-transparent border-cyan-400 rounded-full animate-spin" />
+      <div className="absolute inset-2 border-4 border-t-transparent border-indigo-400 rounded-full animate-spin-slow" />
+    </div>
+    <p className="text-cyan-400 text-lg font-semibold tracking-wide animate-pulse">
+      Loading listings, please wait...
+    </p>
+  </div>
+);
+
 export const getImageSrc = (photo) => {
   if (!photo?.data?.data || !photo?.contentType) return "";
 
@@ -106,6 +118,8 @@ const SellBuyPage = () => {
       alert("Please upload an image.");
       return;
     }
+
+    // Spinner Loader Component
 
     const formatWhatsApp = (num) => {
       const cleaned = num.replace(/\D/g, "");
@@ -246,33 +260,41 @@ const SellBuyPage = () => {
                   Upload Image*
                 </Label>
 
-                <label className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    required
-                    onChange={(e) => setImageFile(e.target.files[0])}
-                    className="hidden"
-                  />
-                  <div className="flex flex-col items-center space-y-2">
-                    <svg
-                      className="w-8 h-8 text-blue-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    <span className="text-sm">
-                      Click to upload or drag and drop
-                    </span>
+                <label htmlFor="photo" className="w-full cursor-pointer">
+                  <div className="flex items-center justify-center w-full p-4 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg shadow-sm hover:bg-gray-700 transition">
+                    <div className="flex flex-col items-center space-y-2">
+                      <svg
+                        className="w-8 h-8 text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      <span className="text-sm">
+                        Tap to upload or drag and drop
+                      </span>
+                    </div>
                   </div>
                 </label>
+
+                <input
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    console.log("Picked file:", file);
+                    setImageFile(file);
+                  }}
+                  className="hidden"
+                />
 
                 {imageFile && (
                   <div className="mt-3">
@@ -420,97 +442,101 @@ const SellBuyPage = () => {
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedProducts.map((product) => (
-            <div
-              key={product._id}
-              className="relative bg-gray-900 rounded-lg shadow-md p-4 hover:scale-[1.02] transition-transform duration-300 hover:shadow-xl"
-            >
-              {/* 🗑 Delete Button - Top Right */}
-              {user?.email === product.email && (
-                <button
-                  onClick={async () => {
-                    try {
-                      await axios.delete(
-                        `${USER_API_ENDPOINT}/api/sellbuys/listings/${product._id}`,
-                        {
-                          withCredentials: true,
-                        }
-                      );
-                      setMarketItems((prev) =>
-                        prev.filter((item) => item._id !== product._id)
-                      );
-                    } catch {
-                      alert("Failed to delete listing.");
-                    }
-                  }}
-                  className="absolute top-2 right-2 text-red-500 hover:text-red-400 z-10"
-                  title="Delete listing"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+        {loading ? (
+          <Loader />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedProducts.map((product) => (
+              <div
+                key={product._id}
+                className="relative bg-gray-900 rounded-lg shadow-md p-4 hover:scale-[1.02] transition-transform duration-300 hover:shadow-xl"
+              >
+                {/* 🗑 Delete Button - Top Right */}
+                {user?.email === product.email && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await axios.delete(
+                          `${USER_API_ENDPOINT}/api/sellbuys/listings/${product._id}`,
+                          {
+                            withCredentials: true,
+                          }
+                        );
+                        setMarketItems((prev) =>
+                          prev.filter((item) => item._id !== product._id)
+                        );
+                      } catch {
+                        alert("Failed to delete listing.");
+                      }
+                    }}
+                    className="absolute top-2 right-2 text-red-500 hover:text-red-400 z-10"
+                    title="Delete listing"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              )}
-              {product.imageSrc && (
-                <img
-                  src={product.imageSrc}
-                  alt={product.title}
-                  className="w-full h-48 object-cover rounded"
-                />
-              )}
-              <h3 className="text-lg font-semibold mt-2">{product.title}</h3>
-              <p className="text-blue-400 font-bold">₹{product.price}</p>
-              <p className="text-sm text-gray-300">{product.description}</p>
-              <p className="text-sm text-gray-300 mb-8">
-                Posted by: {product.email}
-              </p>{" "}
-              {/* Give space at bottom */}
-              {/* 📲 WhatsApp Icon - Bottom Right */}
-              {product.whatsappNumber && (
-                <a
-                  href={`https://wa.me/${product.whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-3 right-3 text-green-400 hover:text-green-300"
-                  title="Contact on WhatsApp"
-                >
-                  <svg
-                    height="24"
-                    width="24"
-                    viewBox="0 0 58 58"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+                {product.imageSrc && (
+                  <img
+                    src={product.imageSrc}
+                    alt={product.title}
+                    className="w-full h-48 object-cover rounded"
+                  />
+                )}
+                <h3 className="text-lg font-semibold mt-2">{product.title}</h3>
+                <p className="text-blue-400 font-bold">₹{product.price}</p>
+                <p className="text-sm text-gray-300">{product.description}</p>
+                <p className="text-sm text-gray-300 mb-8">
+                  Posted by: {product.email}
+                </p>{" "}
+                {/* Give space at bottom */}
+                {/* 📲 WhatsApp Icon - Bottom Right */}
+                {product.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${product.whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute bottom-3 right-3 text-green-400 hover:text-green-300"
+                    title="Contact on WhatsApp"
                   >
-                    <path
-                      fill="#2CB742"
-                      d="M0,58l4.988-14.963C2.457,38.78,1,33.812,1,28.5C1,12.76,13.76,0,29.5,0S58,12.76,58,28.5 S45.24,57,29.5,57c-4.789,0-9.299-1.187-13.26-3.273L0,58z"
-                    />
-                    <path
-                      fill="#FFFFFF"
-                      d="M47.683,37.985c-1.316-2.487-6.169-5.331-6.169-5.331c-1.098-0.626-2.423-0.696-3.049,0.42
+                    <svg
+                      height="24"
+                      width="24"
+                      viewBox="0 0 58 58"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fill="#2CB742"
+                        d="M0,58l4.988-14.963C2.457,38.78,1,33.812,1,28.5C1,12.76,13.76,0,29.5,0S58,12.76,58,28.5 S45.24,57,29.5,57c-4.789,0-9.299-1.187-13.26-3.273L0,58z"
+                      />
+                      <path
+                        fill="#FFFFFF"
+                        d="M47.683,37.985c-1.316-2.487-6.169-5.331-6.169-5.331c-1.098-0.626-2.423-0.696-3.049,0.42
                   c0,0-1.577,1.891-1.978,2.163c-1.832,1.241-3.529,1.193-5.242-0.52l-3.981-3.981l-3.981-3.981
                   c-1.713-1.713-1.761-3.41-0.52-5.242c0.272-0.401,2.163-1.978,2.163-1.978c1.116-0.627,1.046-1.951,0.42-3.049
                   c0,0-2.844-4.853-5.331-6.169c-1.058-0.56-2.357-0.364-3.203,0.482l-1.758,1.758c-5.577,5.577-2.831,11.873,2.746,17.45
                   l5.097,5.097l5.097,5.097c5.577,5.577,11.873,8.323,17.45,2.746l1.758-1.758C48.048,40.341,48.243,39.042,47.683,37.985z"
-                    />
-                  </svg>
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
+                      />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,11 @@
 // index.js
+import dotenv from "dotenv";
+// Load environment variables
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/user.routes.js";
@@ -12,8 +15,6 @@ import lostfounditemRoutes from "./routes/lostFound.routes.js";
 import carpoolRoutes from "./routes/carpool.routes.js"; // Assuming carpoolRoutes is defined and imported
 import sellbuysRoutes from "./routes/sellbuy.routes.js"; // Assuming sellbuysRoutes is defined and imported
 
-// Load environment variables
-dotenv.config();
 
 // DB connection
 connectDB();
