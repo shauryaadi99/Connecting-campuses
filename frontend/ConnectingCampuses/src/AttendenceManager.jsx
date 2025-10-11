@@ -36,6 +36,15 @@ const AttendenceManager = () => {
           return;
         }
 
+        // const response = await axios.get(
+        //   `${USER_API_ENDPOINT}/api/attendance/`,
+        //   {
+        //     withCredentials: true,
+        //     headers: {
+        //       Authorization: `Bearer ${token}`,
+        //     },
+        //   }
+        // );
         const response = await axios.get(
           `${USER_API_ENDPOINT}/api/attendance/`,
           {
@@ -87,6 +96,15 @@ const AttendenceManager = () => {
         return;
       }
 
+      // await axios.post(
+      //   `${USER_API_ENDPOINT}/api/attendance/`,
+      //   {
+      //     subject: selectedSubject,
+      //     date,
+      //     status: status.toLowerCase(),
+      //   },
+      //   { withCredentials: true }
+      // );
       await axios.post(
         `${USER_API_ENDPOINT}/api/attendance/`,
         {
@@ -94,8 +112,14 @@ const AttendenceManager = () => {
           date,
           status: status.toLowerCase(),
         },
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+      toast.success("Attendance updated successfully.");
 
       setAttendance((prev) => {
         const updated = { ...prev };
